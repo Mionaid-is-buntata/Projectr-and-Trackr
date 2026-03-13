@@ -1,0 +1,27 @@
+services:
+  projctr:
+    build: .
+    ports:
+      - "8090:8090"
+    environment:
+      CONFIG_PATH: /app/config.docker.toml
+      HUNTR_JOBS_PATH: /data/jobs/scored
+    volumes:
+      - projctr_data:/data
+      - ./testdata/jobs/scored:/data/jobs/scored:ro
+    depends_on:
+      - qdrant
+    restart: unless-stopped
+
+  qdrant:
+    image: qdrant/qdrant:v1.12.4
+    ports:
+      - "6333:6333"   # REST API
+      - "6334:6334"   # gRPC
+    volumes:
+      - qdrant_data:/qdrant/storage
+    restart: unless-stopped
+
+volumes:
+  projctr_data:
+  qdrant_data:

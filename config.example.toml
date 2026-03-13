@@ -1,0 +1,57 @@
+# Projctr Configuration — Example
+# Copy this file to config.toml and set personal values via .env (see .env.example).
+# Structural settings (ports, modes, thresholds) live here.
+# Personal/environment values (IPs, paths, collection names) go in .env.
+
+[server]
+port = "8090"
+host = "0.0.0.0"
+
+[database]
+path = "./projctr.db"   # override with DATABASE_PATH=...
+
+[huntr]
+jobs_path  = "./testdata/jobs/scored"   # override with HUNTR_JOBS_PATH=...
+score_min  = 0    # Lower bound (inclusive) — jobs scoring below this are too weak a match
+score_max  = 300  # Upper bound (exclusive) — jobs at or above this are already a strong match
+
+[chromadb]
+url        = "http://localhost:8000"           # override with CHROMADB_URL=...
+collection = "your-cv-collection-name"         # override with CHROMADB_COLLECTION=...
+
+[qdrant]
+host                   = "localhost"               # override with QDRANT_HOST=...
+port                   = 6334                      # override with QDRANT_PORT=...
+collection             = "projctr"                 # override with QDRANT_COLLECTION=...
+description_collection = "projctr_descriptions"   # override with QDRANT_DESCRIPTION_COLLECTION=...
+vector_dimensions      = 384
+
+[embedding]
+model    = "all-minilm:l6-v2"
+endpoint = "http://localhost:11434/api/embeddings"   # override with EMBEDDING_ENDPOINT=...
+
+[extraction]
+mode            = "rules"   # "rules", "llm", or "both"
+tech_dictionary = "./config/tech-dict.toml"
+
+[extraction.llm]
+enabled  = false
+endpoint = "http://localhost:11434"   # override with LLM_ENDPOINT=...
+model    = "gemma2:9b"
+
+[clustering]
+min_cluster_size     = 3
+similarity_threshold = 0.65
+
+[ingestion]
+# Scheduled ingest not yet implemented; these values are reserved for future use.
+schedule = ""
+time     = "02:00"
+
+[trackr]
+enabled = true
+
+[trackr.llm]
+# Leave blank to inherit from [extraction.llm]
+endpoint = ""
+model    = ""

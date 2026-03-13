@@ -1,0 +1,17 @@
+[Unit]
+Description=Projctr — Portfolio Project Idea Generator
+After=network.target
+# Block start until NAS is mounted (see /etc/fstab)
+RequiresMountsFor=/mnt/nas
+
+[Service]
+Type=simple
+User=projctr   # set to the user that owns /opt/projctr on your system
+WorkingDirectory=/opt/projctr
+ExecStart=/opt/projctr/projctr
+Environment=CONFIG_PATH=/opt/projctr/config.toml
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

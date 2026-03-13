@@ -1,0 +1,564 @@
+# Technology Keyword Dictionary
+#
+# Version: 1.0
+# Date: 19 February 2026
+#
+# Used by the rule-based extraction service (internal/extraction/rules.go)
+# to identify and normalise technology mentions in job descriptions.
+#
+# Structure:
+#   Each entry maps one or more raw variants to a canonical name and category.
+#   Variants are matched case-insensitively against description text.
+#   Add new entries as they are discovered from real Huntr descriptions.
+#
+# Categories:
+#   language    - programming/scripting languages
+#   framework   - application frameworks and libraries
+#   platform    - cloud platforms, operating systems, infrastructure
+#   tool        - standalone tools and utilities
+#   database    - databases and data stores
+#   methodology - practices, patterns, and methodologies
+
+# ─────────────────────────────────────────────
+# Languages
+# ─────────────────────────────────────────────
+
+[[technologies]]
+canonical = "Go"
+category  = "language"
+variants  = ["go", "golang", "go lang"]
+
+[[technologies]]
+canonical = "Python"
+category  = "language"
+variants  = ["python", "python3", "python 3", "py"]
+
+[[technologies]]
+canonical = "Rust"
+category  = "language"
+variants  = ["rust", "rust-lang", "rustlang"]
+
+[[technologies]]
+canonical = "TypeScript"
+category  = "language"
+variants  = ["typescript", "ts"]
+
+[[technologies]]
+canonical = "JavaScript"
+category  = "language"
+variants  = ["javascript", "js", "node.js", "nodejs", "node js"]
+
+[[technologies]]
+canonical = "Java"
+category  = "language"
+variants  = ["java"]
+
+[[technologies]]
+canonical = "Kotlin"
+category  = "language"
+variants  = ["kotlin"]
+
+[[technologies]]
+canonical = "C#"
+category  = "language"
+variants  = ["c#", "csharp", "c sharp", ".net", "dotnet"]
+
+[[technologies]]
+canonical = "C++"
+category  = "language"
+variants  = ["c++", "cpp", "c plus plus"]
+
+[[technologies]]
+canonical = "C"
+category  = "language"
+variants  = ["c language", "ansi c"]
+
+[[technologies]]
+canonical = "Ruby"
+category  = "language"
+variants  = ["ruby", "ruby on rails", "rails", "ror"]
+
+[[technologies]]
+canonical = "PHP"
+category  = "language"
+variants  = ["php"]
+
+[[technologies]]
+canonical = "Scala"
+category  = "language"
+variants  = ["scala"]
+
+[[technologies]]
+canonical = "Elixir"
+category  = "language"
+variants  = ["elixir", "phoenix"]
+
+[[technologies]]
+canonical = "Swift"
+category  = "language"
+variants  = ["swift"]
+
+[[technologies]]
+canonical = "Bash"
+category  = "language"
+variants  = ["bash", "shell script", "shell scripting", "sh", "zsh"]
+
+[[technologies]]
+canonical = "SQL"
+category  = "language"
+variants  = ["sql", "plsql", "pl/sql", "t-sql", "tsql"]
+
+# ─────────────────────────────────────────────
+# Web Frameworks
+# ─────────────────────────────────────────────
+
+[[technologies]]
+canonical = "React"
+category  = "framework"
+variants  = ["react", "react.js", "reactjs", "react js"]
+
+[[technologies]]
+canonical = "Vue.js"
+category  = "framework"
+variants  = ["vue", "vue.js", "vuejs", "vue js"]
+
+[[technologies]]
+canonical = "Angular"
+category  = "framework"
+variants  = ["angular", "angularjs", "angular js"]
+
+[[technologies]]
+canonical = "Next.js"
+category  = "framework"
+variants  = ["next.js", "nextjs", "next js"]
+
+[[technologies]]
+canonical = "Svelte"
+category  = "framework"
+variants  = ["svelte", "sveltekit"]
+
+[[technologies]]
+canonical = "FastAPI"
+category  = "framework"
+variants  = ["fastapi", "fast api"]
+
+[[technologies]]
+canonical = "Django"
+category  = "framework"
+variants  = ["django"]
+
+[[technologies]]
+canonical = "Flask"
+category  = "framework"
+variants  = ["flask"]
+
+[[technologies]]
+canonical = "Spring Boot"
+category  = "framework"
+variants  = ["spring boot", "spring", "spring framework"]
+
+[[technologies]]
+canonical = "Express"
+category  = "framework"
+variants  = ["express", "express.js", "expressjs"]
+
+[[technologies]]
+canonical = "htmx"
+category  = "framework"
+variants  = ["htmx"]
+
+[[technologies]]
+canonical = "gRPC"
+category  = "framework"
+variants  = ["grpc", "grpc-go", "protocol buffers", "protobuf"]
+
+[[technologies]]
+canonical = "GraphQL"
+category  = "framework"
+variants  = ["graphql", "graph ql"]
+
+# ─────────────────────────────────────────────
+# Databases
+# ─────────────────────────────────────────────
+
+[[technologies]]
+canonical = "PostgreSQL"
+category  = "database"
+variants  = ["postgresql", "postgres", "pg"]
+
+[[technologies]]
+canonical = "MySQL"
+category  = "database"
+variants  = ["mysql", "my sql"]
+
+[[technologies]]
+canonical = "SQLite"
+category  = "database"
+variants  = ["sqlite", "sqlite3"]
+
+[[technologies]]
+canonical = "MongoDB"
+category  = "database"
+variants  = ["mongodb", "mongo"]
+
+[[technologies]]
+canonical = "Redis"
+category  = "database"
+variants  = ["redis"]
+
+[[technologies]]
+canonical = "Elasticsearch"
+category  = "database"
+variants  = ["elasticsearch", "elastic search", "opensearch", "open search"]
+
+[[technologies]]
+canonical = "Cassandra"
+category  = "database"
+variants  = ["cassandra", "apache cassandra"]
+
+[[technologies]]
+canonical = "DynamoDB"
+category  = "database"
+variants  = ["dynamodb", "dynamo db"]
+
+[[technologies]]
+canonical = "ClickHouse"
+category  = "database"
+variants  = ["clickhouse", "click house"]
+
+[[technologies]]
+canonical = "TimescaleDB"
+category  = "database"
+variants  = ["timescaledb", "timescale"]
+
+[[technologies]]
+canonical = "Qdrant"
+category  = "database"
+variants  = ["qdrant"]
+
+[[technologies]]
+canonical = "Pinecone"
+category  = "database"
+variants  = ["pinecone"]
+
+[[technologies]]
+canonical = "Weaviate"
+category  = "database"
+variants  = ["weaviate"]
+
+# ─────────────────────────────────────────────
+# Cloud Platforms
+# ─────────────────────────────────────────────
+
+[[technologies]]
+canonical = "AWS"
+category  = "platform"
+variants  = ["aws", "amazon web services", "amazon aws"]
+
+[[technologies]]
+canonical = "GCP"
+category  = "platform"
+variants  = ["gcp", "google cloud", "google cloud platform"]
+
+[[technologies]]
+canonical = "Azure"
+category  = "platform"
+variants  = ["azure", "microsoft azure"]
+
+[[technologies]]
+canonical = "Cloudflare"
+category  = "platform"
+variants  = ["cloudflare", "cloudflare workers"]
+
+[[technologies]]
+canonical = "Vercel"
+category  = "platform"
+variants  = ["vercel"]
+
+[[technologies]]
+canonical = "Fly.io"
+category  = "platform"
+variants  = ["fly.io", "fly io"]
+
+# ─────────────────────────────────────────────
+# Infrastructure and Orchestration
+# ─────────────────────────────────────────────
+
+[[technologies]]
+canonical = "Kubernetes"
+category  = "platform"
+variants  = ["kubernetes", "k8s", "k 8s"]
+
+[[technologies]]
+canonical = "Docker"
+category  = "tool"
+variants  = ["docker", "docker compose", "docker-compose", "containers", "containerisation", "containerization"]
+
+[[technologies]]
+canonical = "Terraform"
+category  = "tool"
+variants  = ["terraform", "opentofu"]
+
+[[technologies]]
+canonical = "Ansible"
+category  = "tool"
+variants  = ["ansible"]
+
+[[technologies]]
+canonical = "Helm"
+category  = "tool"
+variants  = ["helm", "helm charts"]
+
+[[technologies]]
+canonical = "Pulumi"
+category  = "tool"
+variants  = ["pulumi"]
+
+[[technologies]]
+canonical = "Nomad"
+category  = "tool"
+variants  = ["nomad", "hashicorp nomad"]
+
+[[technologies]]
+canonical = "Consul"
+category  = "tool"
+variants  = ["consul", "hashicorp consul"]
+
+[[technologies]]
+canonical = "Vault"
+category  = "tool"
+variants  = ["vault", "hashicorp vault"]
+
+# ─────────────────────────────────────────────
+# CI/CD
+# ─────────────────────────────────────────────
+
+[[technologies]]
+canonical = "GitHub Actions"
+category  = "tool"
+variants  = ["github actions", "gh actions"]
+
+[[technologies]]
+canonical = "GitLab CI"
+category  = "tool"
+variants  = ["gitlab ci", "gitlab ci/cd", "gitlab pipelines"]
+
+[[technologies]]
+canonical = "Jenkins"
+category  = "tool"
+variants  = ["jenkins"]
+
+[[technologies]]
+canonical = "ArgoCD"
+category  = "tool"
+variants  = ["argocd", "argo cd", "argo"]
+
+[[technologies]]
+canonical = "CircleCI"
+category  = "tool"
+variants  = ["circleci", "circle ci"]
+
+[[technologies]]
+canonical = "Drone CI"
+category  = "tool"
+variants  = ["drone", "drone ci"]
+
+# ─────────────────────────────────────────────
+# Observability and Monitoring
+# ─────────────────────────────────────────────
+
+[[technologies]]
+canonical = "Prometheus"
+category  = "tool"
+variants  = ["prometheus"]
+
+[[technologies]]
+canonical = "Grafana"
+category  = "tool"
+variants  = ["grafana"]
+
+[[technologies]]
+canonical = "OpenTelemetry"
+category  = "tool"
+variants  = ["opentelemetry", "otel", "open telemetry"]
+
+[[technologies]]
+canonical = "Datadog"
+category  = "tool"
+variants  = ["datadog", "data dog"]
+
+[[technologies]]
+canonical = "Jaeger"
+category  = "tool"
+variants  = ["jaeger"]
+
+[[technologies]]
+canonical = "Loki"
+category  = "tool"
+variants  = ["loki", "grafana loki"]
+
+[[technologies]]
+canonical = "eBPF"
+category  = "tool"
+variants  = ["ebpf", "bpf", "bpftrace", "cilium"]
+
+# ─────────────────────────────────────────────
+# Messaging and Streaming
+# ─────────────────────────────────────────────
+
+[[technologies]]
+canonical = "Kafka"
+category  = "platform"
+variants  = ["kafka", "apache kafka"]
+
+[[technologies]]
+canonical = "RabbitMQ"
+category  = "platform"
+variants  = ["rabbitmq", "rabbit mq"]
+
+[[technologies]]
+canonical = "NATS"
+category  = "platform"
+variants  = ["nats", "nats.io"]
+
+[[technologies]]
+canonical = "Pub/Sub"
+category  = "platform"
+variants  = ["pub/sub", "pubsub", "google pub/sub"]
+
+[[technologies]]
+canonical = "SQS"
+category  = "platform"
+variants  = ["sqs", "amazon sqs"]
+
+# ─────────────────────────────────────────────
+# Security
+# ─────────────────────────────────────────────
+
+[[technologies]]
+canonical = "OAuth 2.0"
+category  = "framework"
+variants  = ["oauth", "oauth2", "oauth 2", "oauth 2.0"]
+
+[[technologies]]
+canonical = "OpenID Connect"
+category  = "framework"
+variants  = ["openid connect", "oidc"]
+
+[[technologies]]
+canonical = "JWT"
+category  = "tool"
+variants  = ["jwt", "json web token", "json web tokens"]
+
+[[technologies]]
+canonical = "mTLS"
+category  = "methodology"
+variants  = ["mtls", "mutual tls", "mutual tls authentication"]
+
+# ─────────────────────────────────────────────
+# Methodologies and Patterns
+# ─────────────────────────────────────────────
+
+[[technologies]]
+canonical = "Microservices"
+category  = "methodology"
+variants  = ["microservices", "microservice", "service mesh"]
+
+[[technologies]]
+canonical = "Event-Driven Architecture"
+category  = "methodology"
+variants  = ["event-driven", "event driven", "event sourcing", "eda"]
+
+[[technologies]]
+canonical = "CQRS"
+category  = "methodology"
+variants  = ["cqrs", "command query responsibility segregation"]
+
+[[technologies]]
+canonical = "Domain-Driven Design"
+category  = "methodology"
+variants  = ["ddd", "domain-driven design", "domain driven design"]
+
+[[technologies]]
+canonical = "GitOps"
+category  = "methodology"
+variants  = ["gitops", "git ops"]
+
+[[technologies]]
+canonical = "DevOps"
+category  = "methodology"
+variants  = ["devops", "dev ops", "devsecops", "dev sec ops"]
+
+[[technologies]]
+canonical = "Infrastructure as Code"
+category  = "methodology"
+variants  = ["infrastructure as code", "iac"]
+
+[[technologies]]
+canonical = "REST"
+category  = "methodology"
+variants  = ["rest", "restful", "rest api", "restful api"]
+
+[[technologies]]
+canonical = "WebSockets"
+category  = "methodology"
+variants  = ["websockets", "websocket", "ws"]
+
+[[technologies]]
+canonical = "WebAssembly"
+category  = "methodology"
+variants  = ["webassembly", "wasm", "wasi"]
+
+[[technologies]]
+canonical = "TDD"
+category  = "methodology"
+variants  = ["tdd", "test-driven development", "test driven development"]
+
+# ─────────────────────────────────────────────
+# Data and ML
+# ─────────────────────────────────────────────
+
+[[technologies]]
+canonical = "Apache Spark"
+category  = "platform"
+variants  = ["spark", "apache spark", "pyspark"]
+
+[[technologies]]
+canonical = "dbt"
+category  = "tool"
+variants  = ["dbt", "data build tool"]
+
+[[technologies]]
+canonical = "Airflow"
+category  = "tool"
+variants  = ["airflow", "apache airflow"]
+
+[[technologies]]
+canonical = "Pandas"
+category  = "framework"
+variants  = ["pandas"]
+
+[[technologies]]
+canonical = "PyTorch"
+category  = "framework"
+variants  = ["pytorch", "torch"]
+
+[[technologies]]
+canonical = "TensorFlow"
+category  = "framework"
+variants  = ["tensorflow", "tensor flow"]
+
+[[technologies]]
+canonical = "scikit-learn"
+category  = "framework"
+variants  = ["scikit-learn", "sklearn", "scikit learn"]
+
+[[technologies]]
+canonical = "LangChain"
+category  = "framework"
+variants  = ["langchain", "lang chain"]
+
+[[technologies]]
+canonical = "Hugging Face"
+category  = "platform"
+variants  = ["hugging face", "huggingface", "transformers"]
