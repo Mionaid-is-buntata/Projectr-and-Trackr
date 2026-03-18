@@ -98,6 +98,12 @@ func (s *DescriptionStore) ListUnextracted() ([]*models.Description, error) {
 	return out, rows.Err()
 }
 
+// Clear deletes all descriptions.
+func (s *DescriptionStore) Clear() error {
+	_, err := s.db.Exec(`DELETE FROM descriptions`)
+	return err
+}
+
 // GetByID returns a description by ID.
 func (s *DescriptionStore) GetByID(id int64) (*models.Description, error) {
 	var d models.Description

@@ -99,6 +99,8 @@ type Project struct {
 	ID            int64      `json:"id"`
 	BriefID       int64      `json:"brief_id"`
 	Stage         string     `json:"stage"` // candidate | in_progress | parked | published | archived
+	Title         string     `json:"title"`
+	Complexity    string     `json:"complexity"`
 	RepositoryURL string     `json:"repository_url"`
 	LinkedInURL   string     `json:"linkedin_url"`
 	GiteaURL      string     `json:"gitea_url"`
@@ -118,4 +120,20 @@ type ProjectWithBrief struct {
 	Project
 	BriefTitle      string `json:"brief_title"`
 	BriefComplexity string `json:"brief_complexity"`
+}
+
+// DisplayTitle returns BriefTitle if non-empty, else the project's own Title.
+func (pw *ProjectWithBrief) DisplayTitle() string {
+	if pw.BriefTitle != "" {
+		return pw.BriefTitle
+	}
+	return pw.Title
+}
+
+// DisplayComplexity returns BriefComplexity if non-empty, else the project's own Complexity.
+func (pw *ProjectWithBrief) DisplayComplexity() string {
+	if pw.BriefComplexity != "" {
+		return pw.BriefComplexity
+	}
+	return pw.Complexity
 }

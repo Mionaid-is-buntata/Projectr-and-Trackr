@@ -71,6 +71,12 @@ func (s *BriefStore) List() ([]*models.Brief, error) {
 	return out, rows.Err()
 }
 
+// Clear deletes all briefs.
+func (s *BriefStore) Clear() error {
+	_, err := s.db.Exec(`DELETE FROM briefs`)
+	return err
+}
+
 // GetByID returns a brief by ID.
 func (s *BriefStore) GetByID(id int64) (*models.Brief, error) {
 	var b models.Brief

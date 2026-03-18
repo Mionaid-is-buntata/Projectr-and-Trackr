@@ -97,3 +97,53 @@ Requirements:
 
 	return draft, nil
 }
+
+// GenerateFromProject creates a LinkedIn post draft from a manual project's title and notes.
+func (g *Generator) GenerateFromProject(title, notes string) (string, error) {
+	prompt := fmt.Sprintf(`Write a professional LinkedIn post (150-250 words) announcing that I built %s.
+
+Additional context: %s
+
+Requirements:
+- Professional but conversational tone
+- First person
+- 3-5 relevant hashtags at the end
+- No em-dashes`,
+		title, notes,
+	)
+
+	body, err := json.Marshal(ollamaGenerateReq{
+		Model:  g.model,
+		Prompt: prompt,
+		Stream: false,
+	})
+	if err != nil {
+		return "", ErrLLMUnavailable
+	}
+
+	resp, err := g.client.Post(g.endpoint+"/api/generate", "application/json", bytes.NewReader(body))
+	if err != nil {
+		log.Printf("linkedin generator: endpoint %s unreachable: %v", g.endpoint, err)
+		return "", ErrLLMUnavailable
+	}
+	defer resp.Body.Close()
+
+	raw, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("linkedin generator: read response: %v", err)
+		return "", ErrLLMUnavailable
+	}
+
+	var ollamaResp ollamaGenerateResp
+	if err := json.Unmarshal(raw, &ollamaResp); err != nil {
+		log.Printf("linkedin generator: parse response: %v", err)
+		return "", ErrLLMUnavailable
+	}
+
+	draft := strings.TrimSpace(ollamaResp.Response)
+	if draft == "" {
+		return "", ErrLLMUnavailable
+	}
+
+	return draft, nil
+}

@@ -71,6 +71,8 @@ button{background:#0066cc;color:#fff;border:none;padding:0.4rem 1rem;border-radi
 button:hover{background:#0052a3}
 button.secondary{background:#f0f0f0;color:#333;border:1px solid #ccc}
 button.secondary:hover{background:#e0e0e0}
+button.danger{background:#dc3545;color:#fff;border:none}
+button.danger:hover{background:#b02a37}
 .score-band{background:#f8f9fa;border:1px solid #ddd;border-radius:6px;padding:0.75rem 1rem;margin-bottom:1.5rem;font-size:0.9rem}
 .score-band label{margin-right:0.4rem;color:#444}
 .score-band input[type=number]{width:5rem;padding:0.25rem 0.4rem;border:1px solid #ccc;border-radius:4px;font-size:0.9rem}
@@ -125,6 +127,7 @@ nav a.doc-btn:hover{background:#e0e0e0}
 
   <div class="actions">
     <button onclick="runIngest()">Run Ingest + Pipeline</button>
+    <button class="danger" onclick="clearIdeas()">Clear All Data</button>
   </div>
   <div class="ingest-status" id="ingest-status" style="display:none"></div>
   <h2>Project Ideas</h2>
@@ -199,6 +202,13 @@ nav a.doc-btn:hover{background:#e0e0e0}
         fb.style.display = 'block';
         setTimeout(function(){ fb.style.display = 'none'; }, 2500);
       }).catch(e=>alert('Error saving: '+e));
+    }
+    function clearIdeas() {
+      if (!confirm('This will delete ALL data — descriptions, pain points, clusters, briefs, and Trackr projects. Are you sure?')) return;
+      fetch('/api/admin/clear-ideas', {method:'POST'})
+        .then(r=>{ if (!r.ok) return r.text().then(t=>{ throw new Error(t); }); })
+        .then(()=>{ load(); document.getElementById('projects').innerHTML = '<li class="empty">No project briefs yet. Run ingest to generate briefs automatically.</li>'; })
+        .catch(e=>alert('Clear failed: '+e));
     }
     load();
   </script>

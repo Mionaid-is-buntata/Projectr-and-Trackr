@@ -2,6 +2,7 @@ package trackr
 
 import (
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/yourname/projctr/internal/models"
@@ -29,6 +30,30 @@ type Service struct {
 // NewService creates a Trackr service.
 func NewService(store *repository.ProjectStore, briefStore *repository.BriefStore) *Service {
 	return &Service{store: store, briefStore: briefStore}
+}
+
+// CreateManualProject creates a project not linked to any brief.
+func (s *Service) CreateManualProject(title, complexity, notes, giteaURL, liveURL string) (*models.Project, error) {
+	if strings.TrimSpace(title) == "" {
+		return nil, errors.New("title is required")
+	}
+	now := time.Now()
+	p := &models.Project{
+		BriefID:     0,
+		Stage:       "candidate",
+		Title:       title,
+		Complexity:  complexity,
+		Notes:       notes,
+		GiteaURL:    giteaURL,
+		LiveURL:     liveURL,
+		DateCreated: now,
+	}
+	id, err := s.store.Insert(p)
+	if err != nil {
+		return nil, err
+	}
+	p.ID = id
+	return p, nil
 }
 
 // EnsureProject returns the existing project for a brief, or creates a new candidate.
@@ -110,8 +135,8 @@ func (s *Service) GetByID(projectID int64) (*models.Project, error) {
 	return s.store.GetByID(projectID)
 }
 
-// UpdateMetadata updates a project's gitea_url, live_url, and notes.
-func (s *Service) UpdateMetadata(projectID int64, giteaURL, liveURL, notes string) error {
+// UpdateMetadata updates a project's mutable fields.
+func (s *Service) UpdateMetadata(projectID int64, giteaURL, liveURL, notes, title, complexity string) error {
 	p, err := s.store.GetByID(projectID)
 	if err != nil {
 		return err
@@ -122,6 +147,8 @@ func (s *Service) UpdateMetadata(projectID int64, giteaURL, liveURL, notes strin
 	p.GiteaURL = giteaURL
 	p.LiveURL = liveURL
 	p.Notes = notes
+	p.Title = title
+	p.Complexity = complexity
 	return s.store.Update(p)
 }
 
