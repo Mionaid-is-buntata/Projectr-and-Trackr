@@ -81,6 +81,8 @@ func Migrate(db *sql.DB) error {
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			brief_id INTEGER NOT NULL REFERENCES briefs(id),
 			stage TEXT NOT NULL,
+			title TEXT NOT NULL DEFAULT '',
+			complexity TEXT NOT NULL DEFAULT '',
 			repository_url TEXT,
 			linkedin_url TEXT,
 			notes TEXT,
@@ -117,6 +119,10 @@ func Migrate(db *sql.DB) error {
 
 	// Trackr: rename github_url → gitea_url (idempotent — errors ignored if already renamed or column missing)
 	_, _ = db.Exec(`ALTER TABLE projects RENAME COLUMN github_url TO gitea_url`)
+
+	// Trackr: add title and complexity for manual (non-brief) projects
+	_, _ = db.Exec(`ALTER TABLE projects ADD COLUMN title TEXT NOT NULL DEFAULT ''`)
+	_, _ = db.Exec(`ALTER TABLE projects ADD COLUMN complexity TEXT NOT NULL DEFAULT ''`)
 
 	// Trackr: migrate old stage values to canonical set
 	_, _ = db.Exec(`UPDATE projects SET stage = 'candidate' WHERE stage = 'selected'`)

@@ -106,6 +106,15 @@ func (s *PainPointStore) Count() (int, error) {
 	return n, err
 }
 
+// Clear deletes all pain_point_technologies links and pain points.
+func (s *PainPointStore) Clear() error {
+	if _, err := s.db.Exec(`DELETE FROM pain_point_technologies`); err != nil {
+		return err
+	}
+	_, err := s.db.Exec(`DELETE FROM pain_points`)
+	return err
+}
+
 func scanPainPoints(rows *sql.Rows) ([]*models.PainPoint, error) {
 	var out []*models.PainPoint
 	for rows.Next() {

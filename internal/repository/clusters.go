@@ -147,6 +147,15 @@ func (s *ClusterStore) ListWithoutBriefs() ([]*models.Cluster, error) {
 	return out, rows.Err()
 }
 
+// Clear deletes all cluster members and clusters.
+func (s *ClusterStore) Clear() error {
+	if _, err := s.db.Exec(`DELETE FROM cluster_members`); err != nil {
+		return err
+	}
+	_, err := s.db.Exec(`DELETE FROM clusters`)
+	return err
+}
+
 func float64ToNull(f *float64) interface{} {
 	if f == nil {
 		return nil

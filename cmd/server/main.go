@@ -147,9 +147,10 @@ func main() {
 			DescStore:    descStore,
 		},
 		TrackrDeps: &handlers.TrackrDeps{
-			Service:    trackrSvc,
-			BriefStore: briefStore,
-			Generator:  linkedinGen,
+			Service:      trackrSvc,
+			BriefStore:   briefStore,
+			ProjectStore: projectStore,
+			Generator:    linkedinGen,
 		},
 	})
 

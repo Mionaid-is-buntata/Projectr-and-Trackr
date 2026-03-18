@@ -82,4 +82,9 @@ func Register(r chi.Router, deps *Dependencies) {
 		r.Get("/api/settings", SettingsHandler(deps.JobReader))
 		r.Post("/api/settings", UpdateSettingsHandler(deps.JobReader, deps.SettingsStore))
 	}
+	if deps != nil && deps.BriefsDeps != nil && deps.TrackrDeps != nil &&
+		deps.TrackrDeps.ProjectStore != nil {
+		r.Post("/api/admin/clear-ideas", ClearIdeasHandler(deps))
+		r.Post("/api/admin/clear-trackr", ClearTrackrHandler(deps))
+	}
 }
