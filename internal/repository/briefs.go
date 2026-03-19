@@ -77,6 +77,15 @@ func (s *BriefStore) Clear() error {
 	return err
 }
 
+// UpdateTitle updates a brief's title and sets is_edited and date_modified.
+func (s *BriefStore) UpdateTitle(id int64, title string) error {
+	_, err := s.db.Exec(`
+		UPDATE briefs SET title = ?, is_edited = 1, date_modified = ?
+		WHERE id = ?`, title, time.Now(), id,
+	)
+	return err
+}
+
 // GetByID returns a brief by ID.
 func (s *BriefStore) GetByID(id int64) (*models.Brief, error) {
 	var b models.Brief
