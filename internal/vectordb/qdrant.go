@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/qdrant/go-client/qdrant"
 	"github.com/yourname/projctr/internal/config"
+	"google.golang.org/grpc"
 )
 
 // Client wraps the Qdrant client for Projctr's vector collections.
@@ -22,9 +24,18 @@ func New(cfg config.QdrantConfig) (*Client, error) {
 	if port == 0 {
 		port = 6334
 	}
+	// Slow links (e.g. Qdrant linux/amd64 under QEMU on ARM) need a longer gRPC
+	// handshake than the default. PoolSize 1 avoids three parallel dials.
 	client, err := qdrant.NewClient(&qdrant.Config{
-		Host: cfg.Host,
-		Port: port,
+		Host:                   cfg.Host,
+		Port:                   port,
+		PoolSize:               1,
+		SkipCompatibilityCheck: true,
+		GrpcOptions: []grpc.DialOption{
+			grpc.WithConnectParams(grpc.ConnectParams{
+				MinConnectTimeout: 90 * time.Second,
+			}),
+		},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("qdrant client: %w", err)
@@ -36,7 +47,9 @@ func New(cfg config.QdrantConfig) (*Client, error) {
 	}
 
 	c := &Client{client: client, cfg: cfg, descColl: descColl}
-	if err := c.ensureDescriptionCollection(context.Background()); err != nil {
+	initCtx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
+	defer cancel()
+	if err := c.ensureDescriptionCollection(initCtx); err != nil {
 		client.Close()
 		return nil, err
 	}
