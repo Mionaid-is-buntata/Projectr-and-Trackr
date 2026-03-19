@@ -13,8 +13,11 @@ services:
       - qdrant
     restart: unless-stopped
 
+  # Native arm64 Qdrant images can crash with "<jemalloc>: Unsupported system page size"
+  # on hosts with non-4K pages (e.g. 16K ARM). linux/amd64 runs under emulation but is stable.
   qdrant:
     image: qdrant/qdrant:v1.12.4
+    platform: linux/amd64
     ports:
       - "6333:6333"   # REST API
       - "6334:6334"   # gRPC

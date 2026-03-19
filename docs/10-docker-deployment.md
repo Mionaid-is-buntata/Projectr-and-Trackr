@@ -51,3 +51,24 @@ Sample jobs in `testdata/jobs/scored/jobs_scored_20260301_120000.json` — 2 sub
 ```bash
 docker compose down
 ```
+
+## ARM64 hosts (16K page size) and Qdrant
+
+On some ARM64 Linux kernels (e.g. Raspberry Pi 5, Apple Silicon VMs), the page size is **16 KiB** instead of 4 KiB. The official **linux/arm64** Qdrant image can then crash in a loop with:
+
+```text
+<jemalloc>: Unsupported system page size
+Aborted (core dumped)
+```
+
+`docker-compose.yml` pins Qdrant to **`platform: linux/amd64`** so the x86_64 binary (4K pages under emulation) runs instead.
+
+On Linux (unlike Docker Desktop), you must install **QEMU user-mode + binfmt** once so amd64 containers can start:
+
+```bash
+docker run --privileged --rm tonistiigi/binfmt:latest --install all
+```
+
+After that, `docker compose up -d` should show Qdrant **Up** and logs like `Qdrant HTTP listening on 6333`.
+
+> **Reboots:** binfmt entries may need to be re-applied after some OS upgrades; run the same command again if Qdrant fails with `exec format error` on the amd64 image.
