@@ -8,8 +8,13 @@ Run Projctr with Qdrant in Docker for local testing.
 # Build and start
 docker compose up -d
 
+# If the API is not reachable on the host (curl fails) but the container is "Up",
+# port publishing can be stuck — recreate the stack:
+# docker compose down && docker compose up -d
+
 # Verify
 curl http://localhost:8090/api/health
+# From another machine: http://<host-ip>:8090/
 curl http://localhost:8090/api/dashboard
 
 # Ingest from test data (mounts ./testdata/jobs/scored)

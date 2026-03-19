@@ -2,10 +2,13 @@ services:
   projctr:
     build: .
     ports:
-      - "8090:8090"
+      # Bind explicitly — if host mapping is empty after `up`, run `docker compose down && up -d`
+      - "0.0.0.0:8090:8090"
     environment:
       CONFIG_PATH: /app/config.docker.toml
       HUNTR_JOBS_PATH: /data/jobs/scored
+      # Docker DNS name for the qdrant service (localhost inside the container is wrong)
+      QDRANT_HOST: qdrant
     volumes:
       - projctr_data:/data
       - ./testdata/jobs/scored:/data/jobs/scored:ro
