@@ -5,6 +5,7 @@ import (
 	"html"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -29,6 +30,7 @@ func RegisterBriefs(r chi.Router, deps *BriefsDeps) {
 	r.Get("/api/briefs", listBriefsHandler(deps))
 	r.Post("/api/briefs/generate", generateBriefHandler(deps))
 	r.Get("/api/briefs/{id}", getBriefHandler(deps))
+	r.Put("/api/briefs/{id}", updateBriefHandler(deps))
 	r.Get("/api/briefs/{id}/export", exportBriefHandler(deps))
 	r.Get("/briefs/{id}", briefDetailPageHandler(deps))
 }
@@ -153,6 +155,47 @@ func getBriefHandler(deps *BriefsDeps) http.HandlerFunc {
 			http.Error(w, "not found", http.StatusNotFound)
 			return
 		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(b)
+	}
+}
+
+type updateBriefRequest struct {
+	Title string `json:"title"`
+}
+
+func updateBriefHandler(deps *BriefsDeps) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		idStr := chi.URLParam(r, "id")
+		id, err := strconv.ParseInt(idStr, 10, 64)
+		if err != nil {
+			http.Error(w, "invalid id", http.StatusBadRequest)
+			return
+		}
+		b, err := deps.BriefStore.GetByID(id)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if b == nil {
+			http.Error(w, "not found", http.StatusNotFound)
+			return
+		}
+		var req updateBriefRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "invalid JSON", http.StatusBadRequest)
+			return
+		}
+		title := strings.TrimSpace(req.Title)
+		if title == "" {
+			http.Error(w, "title is required and cannot be empty", http.StatusBadRequest)
+			return
+		}
+		if err := deps.BriefStore.UpdateTitle(id, title); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		b, _ = deps.BriefStore.GetByID(id)
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(b)
 	}

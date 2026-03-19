@@ -487,6 +487,20 @@ func trackrDetailPage(deps *TrackrDeps) http.HandlerFunc {
 			)
 		}
 
+		// Brief-sourced project: allow renaming the portfolio brief title
+		var renameBriefSection string
+		if !isManual && p.BriefID != 0 && briefTitle != "" {
+			renameBriefSection = fmt.Sprintf(
+				`<div class="section">
+<h2>Rename brief</h2>
+<div class="form-row"><label for="brief_title">Brief title</label><input id="brief_title" value="%s"></div>
+<button onclick="saveBriefTitle()">Save title</button>
+<span class="feedback" id="brief-rename-feedback"></span>
+</div>`,
+				esc(briefTitle),
+			)
+		}
+
 		// LinkedIn draft section
 		var draftSection string
 		if p.LinkedInDraft != "" {
@@ -561,8 +575,10 @@ button.secondary:hover{background:#e0e0e0}
 </div>
 
 %s
+%s
 
 <script>
+var briefId = %d;
 function transition(id, to) {
   fetch('/api/trackr/projects/'+id+'/transition', {
     method:'POST',
@@ -624,6 +640,24 @@ function generatePost() {
     fb.textContent='Error: '+e.message;fb.style.color='#c00';
   });
 }
+function saveBriefTitle() {
+  if (!briefId) return;
+  var el = document.getElementById('brief_title');
+  if (!el) return;
+  var title = el.value.trim();
+  if (!title) { alert('Title is required'); return; }
+  fetch('/api/briefs/'+briefId, {
+    method: 'PUT',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({title: title})
+  }).then(r=>{
+    if (!r.ok) return r.text().then(t=>{throw new Error(t)});
+    var fb = document.getElementById('brief-rename-feedback');
+    fb.textContent = 'Saved.'; fb.style.display = 'inline';
+    setTimeout(function(){ fb.style.display = 'none'; }, 2500);
+    location.reload();
+  }).catch(e=>alert('Rename failed: '+e.message));
+}
 </script>
 </body>
 </html>`,
@@ -631,7 +665,8 @@ function generatePost() {
 			buttons.String(),
 			manualFields,
 			esc(p.GiteaURL), esc(p.LiveURL), esc(p.Notes),
-			draftSection,
+			renameBriefSection, draftSection,
+			p.BriefID,
 			p.ID, p.ID, p.ID,
 		)
 	}
