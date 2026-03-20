@@ -27,7 +27,7 @@ vector_dimensions      = 384
 
 [embedding]
 model    = "all-minilm:l6-v2"
-endpoint = "http://localhost:11434/api/embeddings"
+endpoint = "http://host.docker.internal:11434/api/embeddings"
 
 [extraction]
 mode            = "rules"
@@ -35,8 +35,8 @@ tech_dictionary = "./config/tech-dict.toml"
 
 [extraction.llm]
 enabled  = false
-endpoint = "http://localhost:11434"
-model    = "gemma2:9b"
+endpoint = "http://host.docker.internal:11434"
+model    = "mistral:latest"
 
 [clustering]
 min_cluster_size     = 3
@@ -50,5 +50,5 @@ time     = "02:00"
 enabled = true
 
 [trackr.llm]
-endpoint = ""
-model    = ""
+endpoint = "http://host.docker.internal:11434"
+model    = "mistral:latest"

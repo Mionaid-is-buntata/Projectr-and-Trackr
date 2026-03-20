@@ -11,7 +11,9 @@ services:
       QDRANT_HOST: qdrant
     volumes:
       - projctr_data:/data
-      - ./testdata/jobs/scored:/data/jobs/scored:ro
+      - /mnt/nas/huntr-data/jobs/scored:/data/jobs/scored:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       qdrant:
         condition: service_healthy
