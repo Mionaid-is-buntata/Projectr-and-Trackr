@@ -29,7 +29,7 @@ func NewGenerator(endpoint, model string) *Generator {
 	return &Generator{
 		endpoint: endpoint,
 		model:    model,
-		client:   &http.Client{Timeout: 30 * time.Second},
+		client:   &http.Client{Timeout: 5 * time.Minute},
 	}
 }
 
