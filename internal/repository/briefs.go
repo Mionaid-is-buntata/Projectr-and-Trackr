@@ -86,6 +86,12 @@ func (s *BriefStore) UpdateTitle(id int64, title string) error {
 	return err
 }
 
+// SetGeneratedTitle updates title after insert (e.g. "Brief N: …") without marking the brief user-edited.
+func (s *BriefStore) SetGeneratedTitle(id int64, title string) error {
+	_, err := s.db.Exec(`UPDATE briefs SET title = ? WHERE id = ?`, title, id)
+	return err
+}
+
 // GetByID returns a brief by ID.
 func (s *BriefStore) GetByID(id int64) (*models.Brief, error) {
 	var b models.Brief

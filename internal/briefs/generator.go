@@ -16,10 +16,14 @@ func NewGenerator() *Generator {
 	return &Generator{}
 }
 
+// TitleMaxRunes is the maximum length of the summary portion in a brief title (before "Brief N: " prefix).
+const TitleMaxRunes = 240
+
 // GenerateFromCluster creates a Brief from a cluster, including ProjectLayout.
 func (g *Generator) GenerateFromCluster(c *models.Cluster) *models.Brief {
 	now := time.Now()
-	title := g.deriveTitle(c)
+	// Placeholder until DB assigns id; FinalizeBriefTitle applied after insert.
+	title := g.TitleBody(c.Summary)
 	techStack := g.deriveTechStack(c)
 	complexity := g.deriveComplexity(c)
 	layout := g.buildProjectLayout(complexity, techStack)
@@ -40,16 +44,22 @@ func (g *Generator) GenerateFromCluster(c *models.Cluster) *models.Brief {
 	}
 }
 
-func (g *Generator) deriveTitle(c *models.Cluster) string {
-	if c.Summary != "" {
-		// Use first ~50 chars of summary as base
-		s := strings.TrimSpace(c.Summary)
-		if len(s) > 50 {
-			s = s[:47] + "..."
-		}
-		return "Portfolio: " + s
+// TitleBody returns a trimmed summary suitable for embedding in a brief title (length-capped).
+func (g *Generator) TitleBody(summary string) string {
+	s := strings.TrimSpace(summary)
+	if s == "" {
+		return "Untitled idea"
 	}
-	return "Portfolio Project"
+	runes := []rune(s)
+	if len(runes) <= TitleMaxRunes {
+		return s
+	}
+	return string(runes[:TitleMaxRunes-1]) + "…"
+}
+
+// FinalizeBriefTitle sets the stored title after insert when the brief id is known.
+func (g *Generator) FinalizeBriefTitle(briefID int64, problemStatement string) string {
+	return fmt.Sprintf("Brief %d: %s", briefID, g.TitleBody(problemStatement))
 }
 
 func (g *Generator) deriveTechStack(c *models.Cluster) string {

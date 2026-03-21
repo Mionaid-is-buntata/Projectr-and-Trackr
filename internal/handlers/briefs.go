@@ -12,14 +12,17 @@ import (
 	"github.com/yourname/projctr/internal/briefs"
 	"github.com/yourname/projctr/internal/models"
 	"github.com/yourname/projctr/internal/repository"
+	"github.com/yourname/projctr/internal/trackr"
 )
 
 // BriefsDeps holds dependencies for brief handlers.
 type BriefsDeps struct {
-	Generator   *briefs.Generator
+	Generator    *briefs.Generator
 	BriefStore   *repository.BriefStore
 	ClusterStore *repository.ClusterStore
 	DescStore    *repository.DescriptionStore
+	ProjectStore *repository.ProjectStore // optional: resolve Trackr project id for brief page
+	Trackr       *trackr.Service          // optional: ensure project row exists when viewing a brief
 }
 
 // RegisterBriefs adds brief-related routes.
@@ -106,6 +109,10 @@ func generateBriefHandler(deps *BriefsDeps) http.HandlerFunc {
 				return
 			}
 			b.ID = briefID
+			if err := applyBriefTitleAfterInsert(deps, b); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusCreated)
 			json.NewEncoder(w).Encode(b)
@@ -131,11 +138,27 @@ func generateBriefHandler(deps *BriefsDeps) http.HandlerFunc {
 			return
 		}
 		b.ID = id
+		if err := applyBriefTitleAfterInsert(deps, b); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(b)
 	}
+}
+
+func applyBriefTitleAfterInsert(deps *BriefsDeps, b *models.Brief) error {
+	if deps == nil || deps.Generator == nil || deps.BriefStore == nil {
+		return nil
+	}
+	t := deps.Generator.FinalizeBriefTitle(b.ID, b.ProblemStatement)
+	if err := deps.BriefStore.SetGeneratedTitle(b.ID, t); err != nil {
+		return err
+	}
+	b.Title = t
+	return nil
 }
 
 func getBriefHandler(deps *BriefsDeps) http.HandlerFunc {
@@ -253,12 +276,24 @@ func briefDetailPageHandler(deps *BriefsDeps) http.HandlerFunc {
 			http.Error(w, "not found", http.StatusNotFound)
 			return
 		}
+		var trackrID int64
+		if deps.Trackr != nil {
+			if _, err := deps.Trackr.EnsureProject(b); err != nil {
+				// non-fatal: page still useful without Trackr link
+			}
+		}
+		if deps.ProjectStore != nil {
+			if p, err := deps.ProjectStore.GetByBriefID(id); err == nil && p != nil {
+				trackrID = p.ID
+			}
+		}
+
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		renderBriefHTML(w, b)
+		renderBriefHTML(w, b, trackrID)
 	}
 }
 
-func renderBriefHTML(w http.ResponseWriter, b *models.Brief) {
+func renderBriefHTML(w http.ResponseWriter, b *models.Brief, trackrProjectID int64) {
 	escape := html.EscapeString
 	title := escape(b.Title)
 	problem := escape(b.ProblemStatement)
@@ -281,6 +316,9 @@ h2{font-size:1.1rem;margin-top:1.5rem;color:#333}
 .subheader strong{color:#333}
 .back{display:inline-block;margin-bottom:1rem;color:#0066cc;text-decoration:none}
 .back:hover{text-decoration:underline}
+.trackr-link{margin:0.5rem 0}
+.trackr-link a{color:#0066cc;text-decoration:none;font-weight:500}
+.trackr-link a:hover{text-decoration:underline}
 .section{background:#f8f9fa;padding:1rem;border-radius:6px;margin:0.5rem 0}
 pre{white-space:pre-wrap;font-size:0.9rem;overflow-x:auto}
 .export{display:inline-block;margin-top:1rem;padding:0.4rem 0.8rem;background:#0066cc;color:white;text-decoration:none;border-radius:4px;font-size:0.9rem}
@@ -290,6 +328,10 @@ pre{white-space:pre-wrap;font-size:0.9rem;overflow-x:auto}
 <body>
 <a class="back" href="/">← Back to projects</a>
 <h1>` + title + `</h1>`
+
+	if trackrProjectID != 0 {
+		page += `<p class="trackr-link"><a href="/trackr/` + strconv.FormatInt(trackrProjectID, 10) + `">Open in Trackr</a> <span style="color:#666;font-size:0.9rem">(same brief — stage &amp; links)</span></p>`
+	}
 
 	if sourceRole != "" || sourceCompany != "" {
 		page += `<p class="subheader"><strong>` + sourceRole + `</strong> — ` + sourceCompany + `</p>`

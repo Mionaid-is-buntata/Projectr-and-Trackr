@@ -528,6 +528,11 @@ func trackrDetailPage(deps *TrackrDeps) http.HandlerFunc {
 </div>`
 		}
 
+		var briefNav string
+		if p.BriefID != 0 {
+			briefNav = fmt.Sprintf(`<p class="brief-link"><a href="/briefs/%d">Project brief #%d</a> · <a href="/">Projctr dashboard</a></p>`, p.BriefID, p.BriefID)
+		}
+
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		fmt.Fprintf(w, `<!DOCTYPE html>
 <html>
@@ -555,10 +560,14 @@ button.secondary:hover{background:#e0e0e0}
 .empty{color:#666;font-style:italic}
 .feedback{color:#2a7a2a;font-size:0.85rem;display:none;margin-top:0.3rem}
 #draft{font-family:system-ui,sans-serif}
+.brief-link{margin:0.35rem 0 0.75rem}
+.brief-link a{color:#0066cc;text-decoration:none}
+.brief-link a:hover{text-decoration:underline}
 </style>
 </head>
 <body>
 <a class="back" href="/trackr/">← Back to Trackr</a>
+%s
 <h1>%s</h1>
 <p>Stage: <span class="stage-label">%s</span></p>
 
@@ -661,7 +670,7 @@ function saveBriefTitle() {
 </script>
 </body>
 </html>`,
-			esc(title), esc(title), esc(stageLabels[p.Stage]),
+			esc(title), briefNav, esc(title), esc(stageLabels[p.Stage]),
 			buttons.String(),
 			manualFields,
 			esc(p.GiteaURL), esc(p.LiveURL), esc(p.Notes),

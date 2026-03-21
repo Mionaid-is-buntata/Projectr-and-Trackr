@@ -184,9 +184,15 @@ func (s *Service) generateBriefs() (int, error) {
 	count := 0
 	for _, cluster := range newClusters {
 		brief := s.BriefGen.GenerateFromCluster(cluster)
-		if _, err := s.BriefStore.Insert(brief); err != nil {
+		id, err := s.BriefStore.Insert(brief)
+		if err != nil {
 			log.Printf("pipeline: insert brief for cluster %d: %v", cluster.ID, err)
 			continue
+		}
+		brief.ID = id
+		final := s.BriefGen.FinalizeBriefTitle(id, brief.ProblemStatement)
+		if err := s.BriefStore.SetGeneratedTitle(id, final); err != nil {
+			log.Printf("pipeline: set brief title for cluster %d: %v", cluster.ID, err)
 		}
 		count++
 	}

@@ -1,6 +1,10 @@
 package models
 
-import "time"
+import (
+	"fmt"
+	"strings"
+	"time"
+)
 
 // ScoredJob matches the Huntr jobs/scored/*.json schema.
 // Used when reading from Huntr's JSON files.
@@ -123,11 +127,21 @@ type ProjectWithBrief struct {
 }
 
 // DisplayTitle returns BriefTitle if non-empty, else the project's own Title.
+// Legacy briefs used "Portfolio: …" with a very short summary; rewrite to "Brief N: …" when possible.
 func (pw *ProjectWithBrief) DisplayTitle() string {
+	var t string
 	if pw.BriefTitle != "" {
-		return pw.BriefTitle
+		t = pw.BriefTitle
+	} else {
+		t = pw.Title
 	}
-	return pw.Title
+	if t == "" {
+		return fmt.Sprintf("Project #%d", pw.ID)
+	}
+	if pw.BriefID != 0 && strings.HasPrefix(t, "Portfolio: ") {
+		return fmt.Sprintf("Brief %d: %s", pw.BriefID, strings.TrimPrefix(t, "Portfolio: "))
+	}
+	return t
 }
 
 // DisplayComplexity returns BriefComplexity if non-empty, else the project's own Complexity.

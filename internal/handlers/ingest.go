@@ -154,7 +154,11 @@ nav a.doc-btn:hover{background:#e0e0e0}
         }
         ul.innerHTML = briefs.map(function(b){
           var sub = (b.source_role||b.source_company) ? '<div class="source">'+escapeHtml(b.source_role||'')+(b.source_role&&b.source_company?' — ':'')+escapeHtml(b.source_company||'')+'</div>' : '';
-          return '<li><a href="/briefs/'+b.id+'">'+escapeHtml(b.title)+'</a>'+sub+'<div class="meta">'+(b.complexity||'')+' · '+(b.technology_stack||'')+'</div></li>';
+          var t = b.title || '';
+          if (/^Portfolio:\s*/.test(t)) {
+            t = 'Brief ' + b.id + ': ' + t.replace(/^Portfolio:\s*/, '');
+          }
+          return '<li><a href="/briefs/'+b.id+'">'+escapeHtml(t)+'</a>'+sub+'<div class="meta">'+(b.complexity||'')+' · '+(b.technology_stack||'')+'</div></li>';
         }).join('');
       }).catch(function(){ document.getElementById('projects').innerHTML = '<li class="empty">Could not load projects.</li>'; });
     }

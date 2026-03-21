@@ -145,6 +145,8 @@ func main() {
 			BriefStore:   briefStore,
 			ClusterStore: clusterStore,
 			DescStore:    descStore,
+			ProjectStore: projectStore,
+			Trackr:       trackrSvc,
 		},
 		TrackrDeps: &handlers.TrackrDeps{
 			Service:      trackrSvc,
