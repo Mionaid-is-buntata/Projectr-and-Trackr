@@ -45,8 +45,13 @@ func listBriefsHandler(deps *BriefsDeps) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		out := make([]models.Brief, len(briefs))
+		for i, b := range briefs {
+			out[i] = *b
+			out[i].Title = b.DisplayTitle()
+		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(briefs)
+		json.NewEncoder(w).Encode(out)
 	}
 }
 
@@ -178,8 +183,10 @@ func getBriefHandler(deps *BriefsDeps) http.HandlerFunc {
 			http.Error(w, "not found", http.StatusNotFound)
 			return
 		}
+		out := *b
+		out.Title = b.DisplayTitle()
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(b)
+		json.NewEncoder(w).Encode(&out)
 	}
 }
 
@@ -219,6 +226,11 @@ func updateBriefHandler(deps *BriefsDeps) http.HandlerFunc {
 			return
 		}
 		b, _ = deps.BriefStore.GetByID(id)
+		if b != nil {
+			out := *b
+			out.Title = b.DisplayTitle()
+			b = &out
+		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(b)
 	}
@@ -248,7 +260,7 @@ func exportBriefHandler(deps *BriefsDeps) http.HandlerFunc {
 }
 
 func exportMarkdown(w http.ResponseWriter, b *models.Brief) {
-	w.Write([]byte("# " + b.Title + "\n\n"))
+	w.Write([]byte("# " + b.DisplayTitle() + "\n\n"))
 	if b.SourceRole != "" || b.SourceCompany != "" {
 		w.Write([]byte("**" + b.SourceRole + " — " + b.SourceCompany + "**\n\n"))
 	}
@@ -295,7 +307,7 @@ func briefDetailPageHandler(deps *BriefsDeps) http.HandlerFunc {
 
 func renderBriefHTML(w http.ResponseWriter, b *models.Brief, trackrProjectID int64) {
 	escape := html.EscapeString
-	title := escape(b.Title)
+	title := escape(b.DisplayTitle())
 	problem := escape(b.ProblemStatement)
 	approach := escape(b.SuggestedApproach)
 	techStack := escape(b.TechnologyStack)

@@ -98,6 +98,42 @@ type Brief struct {
 	DateModified      *time.Time `json:"date_modified"`
 }
 
+// DisplayTitle returns a UI/API-facing title, rewriting legacy "Portfolio: …" to "Brief N: …".
+func (b *Brief) DisplayTitle() string {
+	if b == nil {
+		return ""
+	}
+	return DisplayBriefTitle(b.ID, b.Title)
+}
+
+// DisplayBriefTitle rewrites stored brief titles for display: legacy "Portfolio: …" and
+// "Portfolio Project" become "Brief id: …". Titles already starting with "Brief id:" are unchanged.
+func DisplayBriefTitle(briefID int64, storedTitle string) string {
+	t := strings.TrimSpace(storedTitle)
+	if briefID == 0 {
+		return storedTitle
+	}
+	if t == "" {
+		return fmt.Sprintf("Brief %d", briefID)
+	}
+	want := fmt.Sprintf("Brief %d:", briefID)
+	if strings.HasPrefix(t, want) {
+		return t
+	}
+	lower := strings.ToLower(t)
+	if strings.HasPrefix(lower, "portfolio:") {
+		rest := strings.TrimSpace(t[len("portfolio:"):])
+		if rest == "" {
+			rest = "Untitled idea"
+		}
+		return fmt.Sprintf("Brief %d: %s", briefID, rest)
+	}
+	if lower == "portfolio project" {
+		return fmt.Sprintf("Brief %d: Untitled idea", briefID)
+	}
+	return t
+}
+
 // Project tracks a Brief through the portfolio pipeline.
 type Project struct {
 	ID            int64      `json:"id"`
@@ -127,7 +163,7 @@ type ProjectWithBrief struct {
 }
 
 // DisplayTitle returns BriefTitle if non-empty, else the project's own Title.
-// Legacy briefs used "Portfolio: …" with a very short summary; rewrite to "Brief N: …" when possible.
+// Legacy briefs used "Portfolio: …"; rewrite to "Brief N: …" via DisplayBriefTitle.
 func (pw *ProjectWithBrief) DisplayTitle() string {
 	var t string
 	if pw.BriefTitle != "" {
@@ -138,8 +174,8 @@ func (pw *ProjectWithBrief) DisplayTitle() string {
 	if t == "" {
 		return fmt.Sprintf("Project #%d", pw.ID)
 	}
-	if pw.BriefID != 0 && strings.HasPrefix(t, "Portfolio: ") {
-		return fmt.Sprintf("Brief %d: %s", pw.BriefID, strings.TrimPrefix(t, "Portfolio: "))
+	if pw.BriefID != 0 {
+		return DisplayBriefTitle(pw.BriefID, t)
 	}
 	return t
 }
