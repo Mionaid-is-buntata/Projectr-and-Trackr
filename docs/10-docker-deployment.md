@@ -77,3 +77,22 @@ docker run --privileged --rm tonistiigi/binfmt:latest --install all
 After that, `docker compose up -d` should show Qdrant **Up** and logs like `Qdrant HTTP listening on 6333`.
 
 > **Reboots:** binfmt entries may need to be re-applied after some OS upgrades; run the same command again if Qdrant fails with `exec format error` on the amd64 image.
+
+## Docker `data-root` on the right disk (Linux)
+
+Image layers, build cache, and container metadata all live under Docker’s **data root** (default: `/var/lib/docker` on the root filesystem). If `/etc/docker/daemon.json` sets `"data-root"` to a **small or nearly full disk** (e.g. a dedicated SSD mounted at `/mnt/docker-data`), builds can fail with `no space left on device` while the **main OS disk** still has free space.
+
+**Recommendation:** keep `data-root` on the **larger** filesystem (usually the same volume as `/`, e.g. `/var/lib/docker` on `/dev/sdb…`), not on a tiny auxiliary drive used only for legacy experiments.
+
+1. Stop Docker: `sudo systemctl stop docker` (and `docker.socket` if present).
+2. Copy the existing tree:  
+   `sudo rsync -aH /old/path/docker/ /var/lib/docker/`  
+   (or merge into an existing `/var/lib/docker` after a rename backup.)
+3. Point the daemon at the default location, e.g. `/etc/docker/daemon.json`:
+   ```json
+   {}
+   ```
+   (Empty object = use default `/var/lib/docker`.)
+4. Start Docker: `sudo systemctl start docker`, then `docker compose up -d` in the project directory.
+
+After verifying containers and volumes, you can remove the old `data-root` directory to reclaim space on the small disk.

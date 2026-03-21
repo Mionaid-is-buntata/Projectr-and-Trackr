@@ -56,8 +56,17 @@ func listProjectsHandler(deps *TrackrDeps) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		out := make([]*models.ProjectWithBrief, len(projects))
+		for i, p := range projects {
+			c := new(models.ProjectWithBrief)
+			*c = *p
+			if c.BriefID != 0 {
+				c.BriefTitle = models.DisplayBriefTitle(c.BriefID, c.BriefTitle)
+			}
+			out[i] = c
+		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(projects)
+		json.NewEncoder(w).Encode(out)
 	}
 }
 
@@ -459,7 +468,7 @@ func trackrDetailPage(deps *TrackrDeps) http.HandlerFunc {
 			}
 		}
 		if briefTitle != "" {
-			title = briefTitle
+			title = models.DisplayBriefTitle(p.BriefID, briefTitle)
 		} else if p.Title != "" {
 			title = p.Title
 		} else {
@@ -729,7 +738,7 @@ func exportProjectHandler(deps *TrackrDeps) http.HandlerFunc {
 				return
 			}
 
-			w.Write([]byte("# " + brief.Title + "\n\n"))
+			w.Write([]byte("# " + brief.DisplayTitle() + "\n\n"))
 			w.Write([]byte("**Stage:** " + stageLabels[p.Stage] + "\n\n"))
 			if p.GiteaURL != "" {
 				w.Write([]byte("**Gitea:** " + p.GiteaURL + "\n\n"))
