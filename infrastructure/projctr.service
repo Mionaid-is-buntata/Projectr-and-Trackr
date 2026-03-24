@@ -1,12 +1,13 @@
 [Unit]
-Description=Projctr — Portfolio Project Idea Generator
+Description=Projctr - Portfolio Project Idea Generator
 After=network.target
-# Block start until NAS is mounted (see /etc/fstab)
+# Start only after this path is reachable (NAS). Comment out if you do not use /mnt/nas.
 RequiresMountsFor=/mnt/nas
 
 [Service]
 Type=simple
-User=projctr   # set to the user that owns /opt/projctr on your system
+# Must exist on the system and own /opt/projctr (deploy uses campbell).
+User=campbell
 WorkingDirectory=/opt/projctr
 ExecStart=/opt/projctr/projctr
 Environment=CONFIG_PATH=/opt/projctr/config.toml

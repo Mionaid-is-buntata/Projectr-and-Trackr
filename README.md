@@ -37,12 +37,26 @@ make lint       # golangci-lint
 
 ## Deployment
 
+Run these **from your development machine** (full clone of this repo), not from `/opt/projctr` on the Pi:
+
 ```bash
 make arm        # cross-compile for ARM64 (Raspberry Pi)
 make deploy     # rsync to deploy target and restart systemd service
 ```
 
-Target: Raspberry Pi (ARM64), managed by systemd (`infrastructure/projctr.service`). Configure deploy target in `.env`.
+Target: Raspberry Pi (ARM64), managed by systemd (`infrastructure/projctr.service`). Configure `DEPLOY_USER`, `DEPLOY_HOST`, and `DEPLOY_DIR` in `.env`.
+
+On the Pi, `/opt/projctr` only contains the binary, config, and docs — use `make help` there for `restart` / `status` / `logs` after a workstation deploy.
+
+**If you use Docker Compose on the Pi** (`docker-compose.yml` in this repo), port **8090** is served by the **container**, not by `projctr.service`. `make deploy` updates `/opt/projctr/projctr` only; you must **rebuild the image** or ingest will still hit an old binary:
+
+```bash
+# On the Pi, from this repository directory
+git pull
+docker compose build --no-cache projctr && docker compose up -d projctr
+```
+
+Use **either** systemd **or** Docker for Projctr on one host — not both (they contend for 8090).
 
 ## Architecture
 

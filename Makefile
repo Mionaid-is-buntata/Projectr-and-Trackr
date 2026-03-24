@@ -44,8 +44,10 @@ arm:
 	GOOS=linux GOARCH=arm64 go build -o projctr-arm64 ./cmd/server
 
 # Copy binary and assets to the deploy target and restart the service
+# (Run this from the workstation repo — not on the Pi; /opt/projctr has no Go source.)
 deploy: arm
 	ssh $(DEPLOY_USER)@$(DEPLOY_HOST) "mkdir -p $(DEPLOY_DIR)/config $(DEPLOY_DIR)/docs"
+	rsync -avz infrastructure/pi-install/Makefile $(DEPLOY_USER)@$(DEPLOY_HOST):$(DEPLOY_DIR)/Makefile
 	rsync -avz projctr-arm64 infrastructure/projctr.service $(DEPLOY_USER)@$(DEPLOY_HOST):$(DEPLOY_DIR)/
 	rsync -avz config/ $(DEPLOY_USER)@$(DEPLOY_HOST):$(DEPLOY_DIR)/config/
 	rsync -avz --delete docs/ $(DEPLOY_USER)@$(DEPLOY_HOST):$(DEPLOY_DIR)/docs/
