@@ -17,6 +17,22 @@ func NewDescriptionStore(db *sql.DB) *DescriptionStore {
 	return &DescriptionStore{db: db}
 }
 
+// HasHuntrID returns true if a description with this Huntr job id (URL) exists.
+func (s *DescriptionStore) HasHuntrID(huntrID string) (bool, error) {
+	var exists int
+	err := s.db.QueryRow(
+		`SELECT 1 FROM descriptions WHERE huntr_id = ? LIMIT 1`,
+		huntrID,
+	).Scan(&exists)
+	if err == sql.ErrNoRows {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 // HasContentHash returns true if a description with this content hash exists.
 func (s *DescriptionStore) HasContentHash(hash string) (bool, error) {
 	var exists int

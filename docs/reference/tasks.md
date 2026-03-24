@@ -1,6 +1,6 @@
 # Trackr — Task List
 
-> Before starting any task, read `docs/trackr/product.md`, `docs/trackr/structure.md`, and `docs/trackr/tech.md`.
+> Before starting any task, read `docs/reference/product.md`, `docs/reference/structure.md`, and `docs/reference/tech.md`.
 > Switch to a feature branch before touching code: `git checkout -b feature/trackr-<slug>`
 
 ---
@@ -42,7 +42,7 @@ Steps:
 
 Steps:
 1. Create `internal/trackr/service.go`.
-2. Define `validTransitions` map (see `docs/trackr/structure.md`).
+2. Define `validTransitions` map (see `docs/reference/structure.md`).
 3. Implement `TransitionStage` — validate transition, compute which date field to set (`date_started` for `in_progress`, `date_published` for `published`, `date_parked` for `parked`), call `store.UpdateStage`.
 4. Implement `EnsureProject(ctx, brief *models.Brief) (*models.Project, error)` — call `GetByBriefID`; if not found, call `Insert` with `stage: "candidate"`, `date_created: time.Now()`.
 5. Implement remaining methods: `ListAll`, `GetForBrief`, `UpdateMetadata`, `SaveDraft`.
@@ -58,7 +58,7 @@ Steps:
 Steps:
 1. Create `internal/handlers/trackr.go`.
 2. Define `TrackrDeps` struct with `Service *trackr.Service` and `Generator *linkedin.Generator` (may be nil).
-3. Implement all API routes from `docs/trackr/structure.md` (skip `generate-post` and `post-draft` — those are Phase 2).
+3. Implement all API routes from `docs/reference/structure.md` (skip `generate-post` and `post-draft` — those are Phase 2).
 4. `POST /api/trackr/projects/{id}/transition` — decode `{"to":"<stage>"}`, call `service.TransitionStage`, return 200 with updated project JSON or 422 on `ErrInvalidTransition`.
 5. Add `RegisterTrackr(r chi.Router, deps TrackrDeps)` function.
 6. In `internal/handlers/routes.go` — add `TrackrDeps *TrackrDeps` field to `Dependencies`; add `if deps.TrackrDeps != nil { RegisterTrackr(r, *deps.TrackrDeps) }` in `Register`.
@@ -145,3 +145,20 @@ Update this table after each task completes.
 | 3.2 Published index | `skipped` | — | Not required per user |
 | 3.3 Auto-seed on ingest | `done` | `feature/trackr-phase3` | Pipeline OnComplete callback seeds projects for all briefs |
 | 3.4 RSS feed | `done` | `feature/trackr-phase3` | GET /trackr/feed.xml — Atom feed of published projects |
+| O.1 Ingest `huntr_id` UNIQUE vs content-hash dedupe | `done` | `main` | `HasHuntrID` + skip in `internal/ingestion/pipeline.go`; redeploy binary and confirm `POST /api/ingest` returns 200 on 192.168.30.8 |
+
+---
+
+## Operations — Ingestion
+
+### Task O.1 — Avoid UNIQUE failure when Huntr job text changes (`huntr_id` stable, `content_hash` new)
+
+**Symptom:** `POST /api/ingest` returns HTTP 500 with SQLite error `constraint failed: UNIQUE constraint failed: descriptions.huntr_id (2067)`.
+
+**Cause:** Ingestion deduplicates only by `content_hash` (`HasContentHash`); the schema has `UNIQUE(huntr_id)`. The same job (same URL / `huntr_id`) with updated description text produces a new hash but collides on insert.
+
+**Fix (team choice — minimal change):** Add `HasHuntrID` (or equivalent) on `DescriptionStore`; if `huntr_id` already exists, skip the row and count it as skipped (do not fail the request).
+
+**Alternative (follow-up):** `INSERT ... ON CONFLICT(huntr_id) DO UPDATE` to refresh stored text when Huntr updates a listing.
+
+**Done when:** `curl` `POST /api/ingest` returns HTTP 200 on environments that previously hit this error; ingest stats show skipped rows where appropriate.

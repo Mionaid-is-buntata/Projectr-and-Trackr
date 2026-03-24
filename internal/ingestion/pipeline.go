@@ -51,6 +51,17 @@ func (p *Pipeline) Run(ctx context.Context) (*Result, error) {
 			continue
 		}
 
+		// Same Huntr job (stable URL) can appear with updated text → new content_hash
+		// but UNIQUE(huntr_id) forbids a second row; treat as skipped duplicate.
+		hasHuntr, err := p.Store.HasHuntrID(r.HuntrID)
+		if err != nil {
+			return nil, err
+		}
+		if hasHuntr {
+			skipped++
+			continue
+		}
+
 		var vec []float32
 		if useFuzzy && !fuzzyDegraded {
 			var embedErr error
