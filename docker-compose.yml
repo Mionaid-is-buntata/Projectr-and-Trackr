@@ -14,9 +14,11 @@ services:
       - /mnt/nas/huntr-data/jobs/scored:/data/jobs/scored:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    # Projctr tolerates Qdrant down at runtime; do not block on health (emulated amd64 Qdrant
+    # on Pi can take many minutes; requiring both 6333+6334 in one check caused perpetual unhealthy).
     depends_on:
       qdrant:
-        condition: service_healthy
+        condition: service_started
     restart: unless-stopped
 
   # Native arm64 Qdrant images can crash with "<jemalloc>: Unsupported system page size"
@@ -29,13 +31,13 @@ services:
       - "6334:6334"   # gRPC
     volumes:
       - qdrant_data:/qdrant/storage
-    # Image has no curl/wget; use bash /dev/tcp. Wait for gRPC (6334) too — REST can be up first.
+    # Image has no curl/wget; bash /dev/tcp. Check REST only — gRPC may bind later; Projctr retries gRPC.
     healthcheck:
-      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/6333 && exec 4<>/dev/tcp/127.0.0.1/6334"]
-      interval: 5s
-      timeout: 3s
-      retries: 12
-      start_period: 60s
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/6333"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 300s
     restart: unless-stopped
 
 volumes:
