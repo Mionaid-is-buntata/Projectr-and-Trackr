@@ -1,19 +1,23 @@
 package briefs
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/yourname/projctr/internal/models"
+	"github.com/yourname/projctr/internal/repository"
 )
 
 // Generator produces project briefs from clusters with ProjectLayout.
-type Generator struct{}
+type Generator struct {
+	clusters *repository.ClusterStore
+}
 
-// NewGenerator creates a brief generator.
-func NewGenerator() *Generator {
-	return &Generator{}
+// NewGenerator creates a brief generator backed by cluster data.
+func NewGenerator(clusters *repository.ClusterStore) *Generator {
+	return &Generator{clusters: clusters}
 }
 
 // TitleMaxRunes is the maximum length of the summary portion in a brief title (before "Brief N: " prefix).
@@ -28,13 +32,13 @@ func (g *Generator) GenerateFromCluster(c *models.Cluster) *models.Brief {
 	complexity := g.deriveComplexity(c)
 	layout := g.buildProjectLayout(complexity, techStack)
 
-	return &models.Brief{
+	brief := &models.Brief{
 		ClusterID:         c.ID,
 		Title:             title,
 		ProblemStatement:  c.Summary,
 		SuggestedApproach: g.deriveApproach(c),
 		TechnologyStack:   techStack,
-		ProjectLayout:    layout,
+		ProjectLayout:     layout,
 		Complexity:        complexity,
 		ImpactScore:       c.GapScore,
 		LinkedInAngle:     g.deriveLinkedInAngle(c),
@@ -42,6 +46,15 @@ func (g *Generator) GenerateFromCluster(c *models.Cluster) *models.Brief {
 		DateGenerated:     now,
 		DateModified:      nil,
 	}
+
+	// Populate source fields from the cluster's originating job descriptions.
+	descs, _ := g.clusters.DescriptionsForCluster(c.ID)
+	if len(descs) > 0 {
+		brief.SourceCompany = descs[0].Sector
+		brief.SourceRole = descs[0].RoleTitle
+	}
+
+	return brief
 }
 
 // TitleBody returns a trimmed summary suitable for embedding in a brief title (length-capped).
@@ -63,16 +76,31 @@ func (g *Generator) FinalizeBriefTitle(briefID int64, problemStatement string) s
 }
 
 func (g *Generator) deriveTechStack(c *models.Cluster) string {
-	// Placeholder: derive from gap_type or use generic
-	switch c.GapType {
+	techs, err := g.clusters.TechnologiesForCluster(c.ID)
+	if err != nil || len(techs) == 0 {
+		return g.fallbackTechStack(c.GapType)
+	}
+	names := make([]string, 0, len(techs))
+	for _, t := range techs {
+		names = append(names, t.Name)
+	}
+	if len(names) > 8 {
+		names = names[:8]
+	}
+	b, _ := json.Marshal(names)
+	return string(b)
+}
+
+func (g *Generator) fallbackTechStack(gapType string) string {
+	switch gapType {
 	case "skill_extension":
-		return `["Go", "REST API", "SQLite"]`
+		return `["Go","REST API","SQLite"]`
 	case "skill_acquisition":
-		return `["Python", "FastAPI", "PostgreSQL"]`
+		return `["Go","Docker","PostgreSQL"]`
 	case "domain_expansion":
-		return `["TypeScript", "React", "Node.js"]`
+		return `["TypeScript","React","Node.js"]`
 	default:
-		return `["Go", "REST API"]`
+		return `["Go","REST API"]`
 	}
 }
 
@@ -87,11 +115,47 @@ func (g *Generator) deriveComplexity(c *models.Cluster) string {
 }
 
 func (g *Generator) deriveApproach(c *models.Cluster) string {
-	return "1. Define API contract\n2. Implement core logic\n3. Add tests\n4. Document and deploy"
+	painPoints, err := g.clusters.PainPointsForCluster(c.ID)
+	if err != nil || len(painPoints) == 0 {
+		return "1. Research the problem domain\n2. Design solution architecture\n3. Implement core functionality\n4. Add tests and documentation"
+	}
+	var steps []string
+	steps = append(steps, fmt.Sprintf("1. Address: %s", truncate(painPoints[0].ChallengeText, 100)))
+	if len(painPoints) > 1 {
+		steps = append(steps, fmt.Sprintf("2. Solve: %s", truncate(painPoints[1].ChallengeText, 100)))
+	}
+	if len(painPoints) > 2 {
+		steps = append(steps, fmt.Sprintf("3. Handle: %s", truncate(painPoints[2].ChallengeText, 100)))
+	}
+	steps = append(steps, fmt.Sprintf("%d. Add tests and documentation", len(steps)+1))
+	return strings.Join(steps, "\n")
 }
 
 func (g *Generator) deriveLinkedInAngle(c *models.Cluster) string {
-	return fmt.Sprintf("Demonstrates %s skills from %d job postings", c.GapType, c.Frequency)
+	techs, _ := g.clusters.TechnologiesForCluster(c.ID)
+	var techNames []string
+	for _, t := range techs {
+		if len(techNames) >= 3 {
+			break
+		}
+		techNames = append(techNames, t.Name)
+	}
+	techStr := strings.Join(techNames, ", ")
+	if techStr == "" {
+		techStr = c.GapType
+	}
+	return fmt.Sprintf(
+		"Solving a real hiring gap: %d+ job postings need %s skills — this project proves hands-on capability",
+		c.Frequency, techStr,
+	)
+}
+
+func truncate(s string, maxLen int) string {
+	runes := []rune(strings.TrimSpace(s))
+	if len(runes) <= maxLen {
+		return string(runes)
+	}
+	return string(runes[:maxLen-1]) + "…"
 }
 
 func (g *Generator) buildProjectLayout(complexity, techStack string) string {

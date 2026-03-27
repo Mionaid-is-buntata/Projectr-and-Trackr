@@ -147,6 +147,101 @@ func (s *ClusterStore) ListWithoutBriefs() ([]*models.Cluster, error) {
 	return out, rows.Err()
 }
 
+// TechnologiesForCluster returns distinct technologies linked to a cluster's pain points.
+func (s *ClusterStore) TechnologiesForCluster(clusterID int64) ([]models.Technology, error) {
+	rows, err := s.db.Query(`
+		SELECT DISTINCT t.id, t.name, t.category
+		FROM cluster_members cm
+		JOIN pain_point_technologies ppt ON ppt.pain_point_id = cm.pain_point_id
+		JOIN technologies t ON t.id = ppt.technology_id
+		WHERE cm.cluster_id = ?
+		ORDER BY t.category, t.name`, clusterID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []models.Technology
+	for rows.Next() {
+		var t models.Technology
+		if err := rows.Scan(&t.ID, &t.Name, &t.Category); err != nil {
+			return nil, err
+		}
+		out = append(out, t)
+	}
+	return out, rows.Err()
+}
+
+// PainPointsForCluster returns pain points in a cluster ordered by confidence desc.
+func (s *ClusterStore) PainPointsForCluster(clusterID int64) ([]models.PainPoint, error) {
+	rows, err := s.db.Query(`
+		SELECT p.id, p.description_id, p.challenge_text,
+			COALESCE(p.domain,''), COALESCE(p.outcome_text,''),
+			p.confidence, COALESCE(p.qdrant_point_id,''), p.date_extracted
+		FROM cluster_members cm
+		JOIN pain_points p ON p.id = cm.pain_point_id
+		WHERE cm.cluster_id = ?
+		ORDER BY p.confidence DESC`, clusterID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []models.PainPoint
+	for rows.Next() {
+		var pp models.PainPoint
+		if err := rows.Scan(
+			&pp.ID, &pp.DescriptionID, &pp.ChallengeText, &pp.Domain,
+			&pp.OutcomeText, &pp.Confidence, &pp.QdrantPointID, &pp.DateExtracted,
+		); err != nil {
+			return nil, err
+		}
+		out = append(out, pp)
+	}
+	return out, rows.Err()
+}
+
+// DescriptionsForCluster returns distinct job descriptions linked to a cluster's pain points.
+func (s *ClusterStore) DescriptionsForCluster(clusterID int64) ([]models.Description, error) {
+	rows, err := s.db.Query(`
+		SELECT DISTINCT d.id, COALESCE(d.huntr_id,''), COALESCE(d.role_title,''), COALESCE(d.sector,''),
+			d.salary_min, d.salary_max, COALESCE(d.location,''), COALESCE(d.source_board,''),
+			COALESCE(d.huntr_score,0), COALESCE(d.raw_text,''),
+			COALESCE(d.date_scraped, d.date_ingested), d.date_ingested, COALESCE(d.content_hash,'')
+		FROM cluster_members cm
+		JOIN pain_points pp ON pp.id = cm.pain_point_id
+		JOIN descriptions d ON d.id = pp.description_id
+		WHERE cm.cluster_id = ?`, clusterID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []models.Description
+	for rows.Next() {
+		var d models.Description
+		var salMin, salMax sql.NullInt64
+		var dateScraped sql.NullString
+		if err := rows.Scan(
+			&d.ID, &d.HuntrID, &d.RoleTitle, &d.Sector,
+			&salMin, &salMax, &d.Location, &d.SourceBoard,
+			&d.HuntrScore, &d.RawText, &dateScraped, &d.DateIngested, &d.ContentHash,
+		); err != nil {
+			return nil, err
+		}
+		if salMin.Valid {
+			v := int(salMin.Int64)
+			d.SalaryMin = &v
+		}
+		if salMax.Valid {
+			v := int(salMax.Int64)
+			d.SalaryMax = &v
+		}
+		if dateScraped.Valid {
+			d.DateScraped = d.DateIngested // best effort
+		}
+		out = append(out, d)
+	}
+	return out, rows.Err()
+}
+
 // Clear deletes all cluster members and clusters.
 func (s *ClusterStore) Clear() error {
 	if _, err := s.db.Exec(`DELETE FROM cluster_members`); err != nil {
