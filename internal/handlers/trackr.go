@@ -180,14 +180,14 @@ func generatePostHandler(deps *TrackrDeps) http.HandlerFunc {
 		}
 		var draft string
 		if p.BriefID == 0 {
-			draft, err = deps.Generator.GenerateFromProject(p.Title, p.Notes)
+			draft, err = deps.Generator.GenerateFromProject(p)
 		} else {
 			brief, berr := deps.BriefStore.GetByID(p.BriefID)
 			if berr != nil || brief == nil {
 				http.Error(w, "brief not found", http.StatusNotFound)
 				return
 			}
-			draft, err = deps.Generator.Generate(brief)
+			draft, err = deps.Generator.Generate(brief, p)
 		}
 		if err != nil {
 			if errors.Is(err, linkedin.ErrLLMUnavailable) {

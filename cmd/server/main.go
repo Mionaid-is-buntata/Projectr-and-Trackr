@@ -90,7 +90,7 @@ func main() {
 	clusterSvc := clustering.NewService(painPointStore, clusterStore, embedder, dbscan)
 
 	// Brief generator
-	briefGen := briefs.NewGenerator()
+	briefGen := briefs.NewGenerator(clusterStore)
 
 	// Post-ingest pipeline service
 	pipelineSvc := pipeline.New(descStore, painPointStore, clusterStore, extractSvc, clusterSvc, briefGen, briefStore)

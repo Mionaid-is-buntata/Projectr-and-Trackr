@@ -170,6 +170,12 @@ func Load(path string) (*Config, error) {
 	if v := os.Getenv("QDRANT_DESCRIPTION_COLLECTION"); v != "" {
 		cfg.Qdrant.DescriptionCollection = v
 	}
+	if v := os.Getenv("TRACKR_LLM_ENDPOINT"); v != "" {
+		cfg.Trackr.LLM.Endpoint = v
+	}
+	if v := os.Getenv("TRACKR_LLM_MODEL"); v != "" {
+		cfg.Trackr.LLM.Model = v
+	}
 
 	return &cfg, nil
 }

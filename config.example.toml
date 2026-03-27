@@ -52,6 +52,10 @@ time     = "02:00"
 enabled = true
 
 [trackr.llm]
-# Leave blank to inherit from [extraction.llm]
+# Leave blank to inherit from [extraction.llm].
+# To use a dedicated machine (e.g. Francis with RTX 5060Ti):
+#   endpoint = "http://francis.local:11434"
+#   model    = "qwen2.5:15b"
+# Or override via env: TRACKR_LLM_ENDPOINT, TRACKR_LLM_MODEL
 endpoint = ""
 model    = ""
