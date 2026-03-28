@@ -29,14 +29,15 @@ Before using Projctr, the following must be running:
 
 ### Infrastructure checklist
 
-| Component | Host | How to verify |
-|-----------|------|---------------|
-| Projctr service | the Raspberry Pi (<DEPLOY_HOST>) | `curl http://your-pi.local:8090/api/health` → `{"status":"ok"}` |
-| NAS mount | the Raspberry Pi at `/mnt/nas` | `ssh $DEPLOY_USER@$DEPLOY_HOST "ls /mnt/nas/huntr-data/jobs/scored/"` |
-| Ollama embeddings | the Raspberry Pi at localhost:11434 | `ssh $DEPLOY_USER@$DEPLOY_HOST "curl -s http://localhost:11434/"` |
-| Ollama LLM (llama3) | the LLM host (<LLM_HOST>) at localhost:11434 | `curl -s http://<LLM_HOST>:11434/` |
+| Component | Host | Required for | How to verify |
+|-----------|------|--------------|---------------|
+| Projctr service | Raspberry Pi (`<DEPLOY_HOST>`) | Everything | `curl http://your-pi.local:8090/api/health` → `{"status":"ok"}` |
+| NAS mount | Raspberry Pi at `/mnt/nas` | Ingest | `ssh $DEPLOY_USER@$DEPLOY_HOST "ls /mnt/nas/huntr-data/jobs/scored/"` |
+| Ollama embeddings | Raspberry Pi at `localhost:11434` | Clustering, fuzzy dedup | `ssh $DEPLOY_USER@$DEPLOY_HOST "curl -s http://localhost:11434/"` |
+| Ollama LLM (local) | Raspberry Pi or LLM host at `<LLM_ENDPOINT>` | Extraction (mode `"llm"` or `"both"`) | `curl -s <LLM_ENDPOINT>/` |
+| **Francis** (Ollama) | `francis.local:11434` | Brief generation, "Refine with Francis" | `curl -s http://francis.local:11434/` |
 
-> **Note:** Ollama on the LLM host is only required when `extraction.mode` is `"llm"` or `"both"` in `config.toml`. In `"rules"` mode, the LLM host does not need to be running for the pipeline to function.
+> **Note:** Francis is optional. When offline, brief generation falls back to the rule-based path automatically (5-second TCP dial timeout). The "Refine with Francis" button on brief pages will show an error message if Francis is unreachable — it will not silently degrade.
 
 ### Check the systemd service on the deploy target
 
@@ -121,7 +122,72 @@ The **Project Ideas** list below the stats shows all generated briefs. Each entr
 
 ---
 
-## 5. Viewing Project Briefs
+## 5. Refining Briefs with Francis
+
+Briefs generated without Francis (those showing `generation_source: "rules"` or `"local_llm"`) can be upgraded at any time by sending them through Francis's `mixtral:latest` model, which produces sharper problem statements, focused build plans, and better LinkedIn angles.
+
+### From the browser
+
+On any brief detail page (`/briefs/{id}`) or Trackr project page (`/trackr/{id}`), a **"Refine with Francis (mixtral)"** button appears when:
+- Francis is configured in `config.toml` (`[trackr.llm]` section)
+- The brief has not already been refined by Francis
+
+Click the button. The page shows "Sending to Francis…" while the request is in flight (this may take 30–90 seconds for `mixtral:latest`), then "Done! Reloading…" on success. If Francis is offline, an error message appears inline and the brief is unchanged.
+
+### Via curl
+
+```bash
+curl -s -X POST http://your-pi.local:8090/api/briefs/3/refine | python3 -m json.tool
+```
+
+Returns the updated brief JSON on success, or HTTP 503 if Francis is unreachable.
+
+### Bulk-refining all non-Francis briefs
+
+```bash
+# Get IDs of briefs not yet refined by Francis
+IDS=$(curl -s http://your-pi.local:8090/api/briefs | python3 -c "
+import json, sys
+briefs = json.load(sys.stdin)
+print(' '.join(str(b['id']) for b in briefs if b.get('generation_source') != 'francis'))
+")
+
+for id in $IDS; do
+  echo "Refining brief $id..."
+  curl -s -X POST http://your-pi.local:8090/api/briefs/$id/refine > /dev/null
+done
+```
+
+---
+
+## 6. Clearing Obsolete Project Ideas
+
+When the extraction prompts or brief generation logic changes significantly, previously generated briefs will reflect the old (weaker) approach. Clear them and re-run ingest to generate fresh ones.
+
+### From the dashboard
+
+1. Open `http://your-pi.local:8090/trackr/` → click **Clear Trackr** to remove all stage-tracking data (briefs are preserved)
+2. Open `http://your-pi.local:8090/` → the admin panel has **Clear All Ideas** to wipe briefs, clusters, and pain points
+
+### Via curl
+
+```bash
+# Clear all Trackr project records (stage, notes, URLs — briefs kept)
+curl -s -X POST http://your-pi.local:8090/api/admin/clear-trackr
+
+# Clear all briefs, clusters, and pain points (full reset)
+curl -s -X POST http://your-pi.local:8090/api/admin/clear-ideas
+```
+
+After clearing, run ingest to regenerate everything with the current prompts:
+
+```bash
+curl -s -X POST http://your-pi.local:8090/api/ingest
+```
+
+---
+
+## 7. Viewing Project Briefs
 
 ### From the dashboard
 
@@ -156,7 +222,7 @@ curl -s http://your-pi.local:8090/api/briefs/3 | python3 -m json.tool
 
 ---
 
-## 6. Exporting a Brief as Markdown
+## 8. Exporting a Brief as Markdown
 
 ### From the browser
 
@@ -172,7 +238,7 @@ The downloaded file contains: Title, Problem Statement, Suggested Approach, Tech
 
 ---
 
-## 7. Manually Generating a Brief
+## 8. Manually Generating a Brief
 
 The pipeline generates briefs automatically after ingest. Use the manual endpoint when you want to generate a brief from a specific cluster or description — for example, after the pipeline has run but you want to retry a specific item.
 
@@ -216,7 +282,7 @@ All successful responses return HTTP 201 with the created brief JSON.
 
 ---
 
-## 8. Monitoring Pipeline Progress
+## 9. Monitoring Pipeline Progress
 
 After triggering an ingest that adds new descriptions, the pipeline runs asynchronously in the background. Poll the pipeline status to track progress:
 
@@ -256,7 +322,7 @@ pipeline: generated 4 new briefs
 
 ---
 
-## 9. Configuration Changes
+## 10. Configuration Changes
 
 The configuration file on the deploy target lives at `~/projctr/config.toml`. Edit it over SSH and restart the service to apply changes.
 
@@ -302,6 +368,26 @@ endpoint = "http://localhost:11434"
 model    = "llama3"
 ```
 
+### Configure Francis for brief generation
+
+Francis is the high-powered Ollama host used to synthesise focused project briefs and the "Refine with Francis" feature. Set the `[trackr.llm]` section in `config.toml`:
+
+```toml
+[trackr.llm]
+endpoint = "http://francis.local:11434"
+model    = "mixtral:latest"
+```
+
+When Francis is configured:
+- New briefs generated by the pipeline will be synthesised by `mixtral:latest` (falls back to rule-based if Francis is offline at generation time)
+- The "Refine with Francis (mixtral)" button appears on all brief and Trackr project pages where `generation_source != "francis"`
+
+When `[trackr.llm]` is left blank, it inherits from `[extraction.llm]`. Set it to use a different, more capable model on a separate machine.
+
+**Env overrides:** `TRACKR_LLM_ENDPOINT`, `TRACKR_LLM_MODEL`
+
+---
+
 ### Adjust clustering sensitivity
 
 ```toml
@@ -314,7 +400,7 @@ Lowering `min_cluster_size` to `2` or `1` will produce more clusters from sparse
 
 ---
 
-## 10. Local Development
+## 11. Local Development
 
 Development is typically done via SSH directly on the deploy target, using VS Code Remote-SSH or Cursor.
 
@@ -369,7 +455,7 @@ make test-race    # with race detector
 
 ---
 
-## 11. Deploying Updates to the Raspberry Pi
+## 12. Deploying Updates to the Raspberry Pi
 
 Run the following from your **workstation** (your-workstation.local), not from the Raspberry Pi.
 
@@ -417,7 +503,7 @@ ssh $DEPLOY_USER@$DEPLOY_HOST "sudo systemctl status projctr"
 
 ---
 
-## 12. Troubleshooting
+## 13. Troubleshooting
 
 ### No project briefs appearing after ingest
 

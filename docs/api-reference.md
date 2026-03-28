@@ -22,7 +22,9 @@ All JSON responses use `Content-Type: application/json`. Error responses return 
    - [GET /api/briefs](#get-apibriefs)
    - [POST /api/briefs/generate](#post-apibriefsgенerate)
    - [GET /api/briefs/{id}](#get-apibriefs-id)
+   - [PUT /api/briefs/{id}](#put-apibriefs-id)
    - [GET /api/briefs/{id}/export](#get-apibriefs-idexport)
+   - [POST /api/briefs/{id}/refine](#post-apibriefs-idrefine)
    - [GET /briefs/{id}](#get-briefs-id)
 4. [Data Models](#4-data-models)
    - [Brief](#brief)
@@ -251,6 +253,7 @@ Returns all project briefs in the database. Returns an empty JSON array `[]` whe
     "impact_score": 0.82,
     "linkedin_angle": "How I added distributed tracing to a 10-year-old service in a weekend",
     "is_edited": false,
+    "generation_source": "francis",
     "date_generated": "2026-03-11T14:00:00Z",
     "date_modified": null
   }
@@ -413,6 +416,69 @@ curl http://your-host.local:8090/api/briefs/1
 
 ---
 
+### PUT /api/briefs/{id}
+
+Updates the title of an existing brief and marks it as user-edited.
+
+**Path parameters**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `id` | `integer` | Brief primary key |
+
+**Request body**
+
+```json
+{ "title": "New project title" }
+```
+
+**Response `200 OK`** — the updated [Brief](#brief) object
+
+**Error codes**
+
+| Code | Condition |
+|---|---|
+| `400` | `id` is not a valid integer, malformed JSON, or empty title |
+| `404` | No brief with the given ID exists |
+| `500` | Database write failure |
+
+---
+
+### POST /api/briefs/{id}/refine
+
+Re-synthesises a brief's content using the Francis LLM (`mixtral:latest`). Francis re-reads the original cluster's pain points and produces a sharper `problem_statement`, `suggested_approach`, `title`, `linkedin_angle`, and optionally updates `complexity` and `impact_score`. Sets `generation_source` to `"francis"`.
+
+The button "Refine with Francis (mixtral)" on the brief detail page and Trackr project page calls this endpoint. The button only appears when `generation_source != "francis"` and Francis is configured.
+
+**Path parameters**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `id` | `integer` | Brief primary key |
+
+**Request body**
+
+None.
+
+**Response `200 OK`** — the updated [Brief](#brief) object
+
+**Error codes**
+
+| Code | Condition |
+|---|---|
+| `400` | `id` is not a valid integer |
+| `404` | No brief with the given ID exists |
+| `503` | Francis is offline or `[trackr.llm]` is not configured |
+| `500` | Database write failure |
+
+**curl example**
+
+```bash
+curl -s -X POST http://your-host.local:8090/api/briefs/3/refine | python3 -m json.tool
+```
+
+---
+
 ### GET /api/briefs/{id}/export
 
 Downloads a brief as a Markdown file. The response body contains a formatted Markdown document with sections for Problem Statement, Suggested Approach, Technology Stack, Project Layout, and Complexity. If the brief has a source role and company, these appear as a bold subheading beneath the title.
@@ -528,8 +594,9 @@ A generated project brief derived from a pain point cluster.
 | ImpactScore | `impact_score` | `float64 \| null` | Computed impact/priority score; `null` if not yet calculated |
 | LinkedInAngle | `linkedin_angle` | `string` | Suggested LinkedIn post framing; may be empty |
 | IsEdited | `is_edited` | `boolean` | `true` if the brief has been manually edited after generation |
+| GenerationSource | `generation_source` | `"rules" \| "local_llm" \| "francis"` | Which path produced this brief's content. `"rules"` = rule-based only; `"local_llm"` = local Ollama; `"francis"` = Francis (mixtral) |
 | DateGenerated | `date_generated` | `datetime` | ISO 8601 timestamp of when the brief was generated |
-| DateModified | `date_modified` | `datetime \| null` | ISO 8601 timestamp of last manual edit; `null` if never edited |
+| DateModified | `date_modified` | `datetime \| null` | ISO 8601 timestamp of last system update or manual edit; `null` if never updated |
 
 ---
 
@@ -659,8 +726,10 @@ The following routes are defined in the project roadmap but have no registered h
 | `GET` | `/api/clusters/{id}` | Get a single cluster by ID |
 | `POST` | `/api/cluster` | Trigger clustering algorithm manually |
 | `POST` | `/api/clusters/{id}/merge` | Merge two clusters |
-| `PUT` | `/api/briefs/{id}` | Manually edit an existing brief |
-| `GET` | `/api/projects` | List all portfolio pipeline projects |
-| `PATCH` | `/api/projects/{id}` | Update a project's stage |
-| `GET` | `/api/settings` | Retrieve application configuration |
-| `PUT` | `/api/settings` | Update application configuration |
+| `GET` | `/api/descriptions` | List all ingested job descriptions |
+| `GET` | `/api/descriptions/{id}` | Get a single description by ID |
+| `GET` | `/api/pain-points` | List all extracted pain points |
+| `POST` | `/api/extract` | Trigger pain point extraction manually |
+| `GET` | `/api/clusters` | List all pain point clusters |
+| `GET` | `/api/clusters/{id}` | Get a single cluster by ID |
+| `POST` | `/api/cluster` | Trigger clustering algorithm manually |

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"html"
 	"net/http"
 	"strconv"
@@ -35,6 +36,7 @@ func RegisterBriefs(r chi.Router, deps *BriefsDeps) {
 	r.Get("/api/briefs/{id}", getBriefHandler(deps))
 	r.Put("/api/briefs/{id}", updateBriefHandler(deps))
 	r.Get("/api/briefs/{id}/export", exportBriefHandler(deps))
+	r.Post("/api/briefs/{id}/refine", refineBriefHandler(deps))
 	r.Get("/briefs/{id}", briefDetailPageHandler(deps))
 }
 
@@ -236,6 +238,46 @@ func updateBriefHandler(deps *BriefsDeps) http.HandlerFunc {
 	}
 }
 
+func refineBriefHandler(deps *BriefsDeps) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+		if err != nil {
+			http.Error(w, "invalid id", http.StatusBadRequest)
+			return
+		}
+		b, err := deps.BriefStore.GetByID(id)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if b == nil {
+			http.Error(w, "not found", http.StatusNotFound)
+			return
+		}
+		refined, err := deps.Generator.Refine(b.ClusterID)
+		if err != nil {
+			if errors.Is(err, briefs.ErrFrancisUnavailable) {
+				http.Error(w, "Francis is offline — try again when it's back", http.StatusServiceUnavailable)
+				return
+			}
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if err := deps.BriefStore.UpdateFromFrancis(id, refined.Title, refined.ProblemStatement, refined.SuggestedApproach, refined.LinkedInAngle, refined.Complexity, refined.Source, refined.ImpactScore); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		b, _ = deps.BriefStore.GetByID(id)
+		if b != nil {
+			out := *b
+			out.Title = b.DisplayTitle()
+			b = &out
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(b)
+	}
+}
+
 func exportBriefHandler(deps *BriefsDeps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		idStr := chi.URLParam(r, "id")
@@ -301,11 +343,11 @@ func briefDetailPageHandler(deps *BriefsDeps) http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		renderBriefHTML(w, b, trackrID)
+		renderBriefHTML(w, b, trackrID, deps.Generator != nil && deps.Generator.CanRefine())
 	}
 }
 
-func renderBriefHTML(w http.ResponseWriter, b *models.Brief, trackrProjectID int64) {
+func renderBriefHTML(w http.ResponseWriter, b *models.Brief, trackrProjectID int64, canRefine bool) {
 	escape := html.EscapeString
 	title := escape(b.DisplayTitle())
 	problem := escape(b.ProblemStatement)
@@ -335,6 +377,9 @@ h2{font-size:1.1rem;margin-top:1.5rem;color:#333}
 pre{white-space:pre-wrap;font-size:0.9rem;overflow-x:auto}
 .export{display:inline-block;margin-top:1rem;padding:0.4rem 0.8rem;background:#0066cc;color:white;text-decoration:none;border-radius:4px;font-size:0.9rem}
 .export:hover{background:#0052a3}
+.refine-btn{margin-top:1rem;margin-left:0.5rem;padding:0.4rem 0.8rem;background:#6f42c1;color:white;border:none;border-radius:4px;font-size:0.9rem;cursor:pointer}
+.refine-btn:hover{background:#5a32a3}
+.refine-feedback{font-size:0.85rem;margin-left:0.5rem}
 </style>
 </head>
 <body>
@@ -359,8 +404,30 @@ pre{white-space:pre-wrap;font-size:0.9rem;overflow-x:auto}
 	if linkedIn != "" {
 		page += `<div class="section"><h2>LinkedIn Angle</h2><p>` + linkedIn + `</p></div>`
 	}
-	page += `
-<a class="export" href="/api/briefs/` + strconv.FormatInt(b.ID, 10) + `/export">Download as Markdown</a>
+	briefIDStr := strconv.FormatInt(b.ID, 10)
+	page += `<div style="margin-top:1rem">` +
+		`<a class="export" href="/api/briefs/` + briefIDStr + `/export">Download as Markdown</a>`
+
+	if canRefine && b.GenerationSource != "francis" {
+		page += `<button class="refine-btn" onclick="refineWithFrancis()">Refine with Francis (mixtral)</button>` +
+			`<span class="refine-feedback" id="refine-fb"></span>`
+	}
+	page += `</div>
+<script>
+function refineWithFrancis() {
+  var fb = document.getElementById('refine-fb');
+  fb.textContent = 'Sending to Francis…'; fb.style.color = '#6f42c1';
+  fetch('/api/briefs/` + briefIDStr + `/refine', {method:'POST'})
+    .then(function(r) {
+      if (!r.ok) return r.text().then(function(t) { throw new Error(t); });
+      fb.textContent = 'Done! Reloading…'; fb.style.color = '#2a7a2a';
+      setTimeout(function() { location.reload(); }, 800);
+    })
+    .catch(function(e) {
+      fb.textContent = e.message; fb.style.color = '#c00';
+    });
+}
+</script>
 </body>
 </html>`
 	w.Write([]byte(page))

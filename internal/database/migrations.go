@@ -102,6 +102,7 @@ func Migrate(db *sql.DB) error {
 	_, _ = db.Exec(`ALTER TABLE briefs ADD COLUMN project_layout TEXT`)
 	_, _ = db.Exec(`ALTER TABLE briefs ADD COLUMN source_company TEXT NOT NULL DEFAULT ''`)
 	_, _ = db.Exec(`ALTER TABLE briefs ADD COLUMN source_role TEXT NOT NULL DEFAULT ''`)
+	_, _ = db.Exec(`ALTER TABLE briefs ADD COLUMN generation_source TEXT NOT NULL DEFAULT 'rules'`)
 
 	// Settings table (idempotent)
 	if _, err := db.Exec(`CREATE TABLE IF NOT EXISTS settings (
