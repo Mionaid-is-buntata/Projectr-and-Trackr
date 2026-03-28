@@ -21,10 +21,11 @@ import (
 
 // TrackrDeps holds dependencies for Trackr handlers.
 type TrackrDeps struct {
-	Service      *trackr.Service
-	BriefStore   *repository.BriefStore
-	ProjectStore *repository.ProjectStore
-	Generator    *linkedin.Generator // may be nil if LLM disabled
+	Service        *trackr.Service
+	BriefStore     *repository.BriefStore
+	ProjectStore   *repository.ProjectStore
+	Generator      *linkedin.Generator  // may be nil if LLM disabled
+	BriefsDeps     *BriefsDeps          // for brief refinement via Francis
 }
 
 // RegisterTrackr adds Trackr routes to the router.
@@ -540,6 +541,17 @@ func trackrDetailPage(deps *TrackrDeps) http.HandlerFunc {
 		var briefNav string
 		if p.BriefID != 0 {
 			briefNav = fmt.Sprintf(`<p class="brief-link"><a href="/briefs/%d">Project brief #%d</a> · <a href="/">Projctr dashboard</a></p>`, p.BriefID, p.BriefID)
+			if deps.BriefsDeps != nil && deps.BriefsDeps.Generator != nil && deps.BriefsDeps.Generator.CanRefine() {
+				if brief, err := deps.BriefStore.GetByID(p.BriefID); err == nil && brief != nil && brief.GenerationSource != "francis" {
+					briefNav += fmt.Sprintf(
+						`<div style="margin-bottom:0.75rem">`+
+							`<button style="background:#6f42c1;color:#fff;border:none;padding:0.35rem 0.85rem;border-radius:4px;cursor:pointer;font-size:0.85rem" onclick="refineWithFrancis(%d)">Refine with Francis (mixtral)</button>`+
+							`<span id="francis-fb" style="font-size:0.85rem;margin-left:0.5rem"></span>`+
+							`</div>`,
+						p.BriefID,
+					)
+				}
+			}
 		}
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -657,6 +669,19 @@ function generatePost() {
   }).catch(e=>{
     fb.textContent='Error: '+e.message;fb.style.color='#c00';
   });
+}
+function refineWithFrancis(briefId) {
+  var fb = document.getElementById('francis-fb');
+  fb.textContent = 'Sending to Francis…'; fb.style.color = '#6f42c1';
+  fetch('/api/briefs/'+briefId+'/refine', {method:'POST'})
+    .then(function(r) {
+      if (!r.ok) return r.text().then(function(t) { throw new Error(t); });
+      fb.textContent = 'Done! Reloading…'; fb.style.color = '#2a7a2a';
+      setTimeout(function() { location.reload(); }, 800);
+    })
+    .catch(function(e) {
+      fb.textContent = e.message; fb.style.color = '#c00';
+    });
 }
 function saveBriefTitle() {
   if (!briefId) return;

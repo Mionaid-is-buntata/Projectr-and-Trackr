@@ -89,8 +89,27 @@ func main() {
 	dbscan := clustering.NewDBSCAN(cfg.Clustering.MinClusterSize, 1.0-cfg.Clustering.SimilarityThreshold)
 	clusterSvc := clustering.NewService(painPointStore, clusterStore, embedder, dbscan)
 
-	// Brief generator
-	briefGen := briefs.NewGenerator(clusterStore)
+	// Brief generator — uses Francis (trackr.llm) when configured, falls back to rule-based.
+	briefLLMEndpoint := cfg.Trackr.LLM.Endpoint
+	if briefLLMEndpoint == "" {
+		briefLLMEndpoint = cfg.Extraction.LLM.Endpoint
+	}
+	briefLLMModel := cfg.Trackr.LLM.Model
+	if briefLLMModel == "" {
+		briefLLMModel = cfg.Extraction.LLM.Model
+	}
+	var briefGen *briefs.Generator
+	if briefLLMEndpoint != "" && briefLLMModel != "" {
+		briefSource := "local_llm"
+		if cfg.Trackr.LLM.Endpoint != "" {
+			briefSource = "francis"
+		}
+		briefGen = briefs.NewGeneratorWithLLM(clusterStore, briefSource, briefLLMEndpoint, briefLLMModel)
+		log.Printf("Brief generator: LLM refinement enabled via %s / %s (source: %s)", briefLLMEndpoint, briefLLMModel, briefSource)
+	} else {
+		briefGen = briefs.NewGenerator(clusterStore)
+		log.Printf("Brief generator: rule-based (no LLM configured)")
+	}
 
 	// Post-ingest pipeline service
 	pipelineSvc := pipeline.New(descStore, painPointStore, clusterStore, extractSvc, clusterSvc, briefGen, briefStore)
@@ -153,6 +172,14 @@ func main() {
 			BriefStore:   briefStore,
 			ProjectStore: projectStore,
 			Generator:    linkedinGen,
+			BriefsDeps:   &handlers.BriefsDeps{
+				Generator:    briefGen,
+				BriefStore:   briefStore,
+				ClusterStore: clusterStore,
+				DescStore:    descStore,
+				ProjectStore: projectStore,
+				Trackr:       trackrSvc,
+			},
 		},
 	})
 

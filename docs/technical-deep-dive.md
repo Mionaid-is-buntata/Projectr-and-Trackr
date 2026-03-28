@@ -75,7 +75,8 @@ Dashed lines indicate optional integrations that degrade gracefully when unavail
 | Host | Role | Key mounts / services |
 |---|---|---|
 | **The Raspberry Pi** | Production target | Runs Projctr as systemd service; mounts NAS at `/mnt/nas/huntr-data/jobs/scored/` |
-| **The LLM host** | ML host on local network | Runs Ollama; hosts `llama3` (LLM extraction) and `all-MiniLM-L6-v2` (embeddings) |
+| **The LLM host** | ML host on local network | Runs Ollama; hosts extraction LLM (`[extraction.llm]`) and `all-MiniLM-L6-v2` (embeddings) |
+| **Francis** | High-powered LLM host (RTX 5060Ti) | Runs Ollama with `mixtral:latest`; used for brief generation and on-demand refinement via `[trackr.llm]`; optional — gracefully degraded when offline |
 | **NAS** | File storage | Holds Huntr's `jobs_scored_*.json` snapshot files; read-only from the Raspberry Pi |
 | **Qdrant** | Vector database | Runs as Docker container (local dev) or sidecar; optional for production |
 
@@ -584,26 +585,36 @@ if existing, ok := seen[key]; !ok || pp.Confidence > existing.Confidence {
 
 **Text truncation:** Input is capped at 3,000 characters to keep latency and token usage reasonable.
 
-**Prompt design:**
+**Prompt design (three-stage reasoning):**
+
+The prompt instructs the model to work through three internal steps before writing output:
+
 ```
-You are a technical recruiter analyst. Extract pain points from the job description below.
+You are a senior systems architect reviewing a job description to identify latent
+engineering challenges.
 
-Return ONLY a JSON array. Each element must have:
-- "challenge_text": the specific technical challenge (one sentence)
-- "domain": one of: language, framework, platform, tool, database, methodology, general
-- "outcome_text": the business outcome this skill enables (may be empty string)
-- "technologies": array of technology names mentioned
-- "confidence": float 0.0-1.0 based on how explicitly this is a requirement
+Work through three steps internally before writing output:
 
-Job description:
-"""
-{text}
-"""
+Step 1 — Extract signals: identify the tech stack, core responsibilities, implicit
+constraints, and anything the role needs to handle but does not explicitly name.
 
-JSON output:
+Step 2 — Infer problems: for each responsibility, ask "what engineering problem does
+this actually require solving?" Focus on system design, scalability, reliability,
+and integration challenges — not skills lists.
+
+Step 3 — Reframe as project ideas: turn each inferred problem into a concrete,
+buildable project a developer could complete to demonstrate mastery.
+
+Output rules:
+- challenge_text must describe a specific engineering problem to solve, written as
+  "Build a..." or "Create a..." — NEVER repeat the job requirement verbatim
+- Penalise resume language: "experience with X" or "familiarity with Y" are NOT
+  valid challenge_text values
+- Prefer latent problems over obvious ones
+- Ignore soft skills, degree requirements, and generic requirements
 ```
 
-The `Stream: false` flag requests a single JSON response rather than a streaming token feed.
+This framing produces `challenge_text` values like "Build a distributed fare validation API that maintains sub-100ms latency under peak commuter load" rather than "Experience with high-throughput APIs".
 
 **JSON extraction from response:**
 `extractJSONArray(s string)` handles two LLM response formats:
@@ -767,44 +778,65 @@ func domainToGapType(domain string) string {
 
 ## 8. Brief Generation (`internal/briefs/`)
 
-`Generator` is a stateless struct with no dependencies. All derivation logic is pure functions operating on `*models.Cluster`.
+`Generator` holds a cluster store reference and an optional `*briefLLMClient` pointing at Francis (the high-powered Ollama host). Two constructors exist:
+
+- `NewGenerator(clusters)` — rule-based only; used when `[trackr.llm]` is not configured.
+- `NewGeneratorWithLLM(clusters, source, endpoint, model)` — wires the LLM client; `source` is `"local_llm"` when inheriting from `[extraction.llm]` or `"francis"` when using `[trackr.llm]` directly.
 
 ### GenerateFromCluster
 
-```go
-func (g *Generator) GenerateFromCluster(c *models.Cluster) *models.Brief {
-    title      := g.deriveTitle(c)
-    techStack  := g.deriveTechStack(c)
-    complexity := g.deriveComplexity(c)
-    layout     := g.buildProjectLayout(complexity, techStack)
-    ...
-}
+Rule-based values are computed first as defaults, then overwritten by the LLM draft if one is returned:
+
+```
+1. deriveTechStack       → reads actual technology names from the cluster's pain points;
+                           falls back to gap_type-based templates if none found
+2. deriveComplexity      → frequency-based: <5 = small, >=5 = medium, >=10 = large
+3. buildProjectLayout    → fixed template per complexity
+4. deriveApproach        → first 3 pain point sentences with "Core build / Extend / Integrate" labels
+5. deriveLinkedInAngle   → template: "X companies hiring for Y — proves capability with Z"
+6. [LLM path] llm.refine → passes pain point challenge_text, tech names, source roles, gap_type,
+                           and frequency to Francis; returns title, problem_statement,
+                           suggested_approach, linkedin_angle, difficulty_level, portfolio_value
+7. Map LLM fields        → difficulty_level → complexity (beginner/intermediate/advanced → small/medium/large)
+8. Set generation_source → "rules", "local_llm", or "francis"
 ```
 
-### Title Derivation
+**Graceful fallback:** If the LLM client is nil or Francis is unreachable (5-second dial timeout), the brief is generated from the rule-based values. The generation completes without error.
 
-Takes the first 47 characters of the cluster's `Summary` (which already contains `"[Domain] <challenge text>"`), appends `"..."` if truncated, and prepends `"Portfolio: "`:
+### LLM Prompt Design (Francis / mixtral)
 
-```go
-return "Portfolio: " + s  // e.g. "Portfolio: [Framework] Experience with React and..."
+The Francis prompt instructs `mixtral:latest` as a **senior systems architect**, not a content writer:
+
 ```
+You are a senior systems architect helping a developer build a focused portfolio project
+that directly addresses real industry demand.
+
+Rules:
+- Solve a specific latent engineering problem — not a vague "build an app with X"
+- Avoid resume language and buzzwords
+- Focus on system design, scalability, reliability, or integration
+- Penalise surface-level extractions
+
+Return a JSON object with: title, problem_statement, suggested_approach (numbered steps),
+linkedin_angle, difficulty_level (beginner/intermediate/advanced), portfolio_value (0–1)
+```
+
+`difficulty_level` is mapped to `complexity`; `portfolio_value` overrides `ImpactScore` when provided.
 
 ### Tech Stack Derivation
 
-Template-based on `gap_type`:
+Reads actual technology names from `ClusterStore.TechnologiesForCluster`. Falls back to gap_type templates only when no technologies are found:
 
-| gap_type | technology_stack |
+| `gap_type` | fallback `technology_stack` |
 |---|---|
-| `skill_extension` | `["Go", "REST API", "SQLite"]` |
-| `skill_acquisition` | `["Python", "FastAPI", "PostgreSQL"]` |
-| `domain_expansion` | `["TypeScript", "React", "Node.js"]` |
-| `mixed` / default | `["Go", "REST API"]` |
-
-This is intentionally a placeholder. The current implementation maps domain categories to generic stacks rather than deriving them from the actual technology names extracted from pain points.
+| `skill_extension` | `["Go","REST API","SQLite"]` |
+| `skill_acquisition` | `["Go","Docker","PostgreSQL"]` |
+| `domain_expansion` | `["TypeScript","React","Node.js"]` |
+| `mixed` / default | `["Go","REST API"]` |
 
 ### Complexity Derivation
 
-Based on `Frequency` (the number of pain points in the cluster):
+Frequency-based (number of pain points in the cluster) unless overridden by LLM `difficulty_level`:
 
 | Frequency | Complexity |
 |---|---|
@@ -812,65 +844,21 @@ Based on `Frequency` (the number of pain points in the cluster):
 | >= 5 | `"medium"` |
 | < 5 | `"small"` |
 
-### Project Layout Templates
+### generation_source Field
 
-`buildProjectLayout(complexity, techStack string)` returns a Markdown string. Three templates:
+Every brief carries a `generation_source` value recording how its content was produced:
 
-**Small:**
-```
-.
-  main.go     # Entry point
-  internal/
-    logic.go
-```
+| Value | Meaning |
+|---|---|
+| `"rules"` | Fully rule-based; no LLM called or LLM returned nil |
+| `"local_llm"` | Synthesised by the local Ollama LLM (`[extraction.llm]` endpoint) |
+| `"francis"` | Synthesised by Francis (`[trackr.llm]` endpoint, `mixtral:latest`) |
 
-**Medium:**
-```
-cmd/
-  main.go
-internal/
-  handlers/
-  service/
-config/
-```
+### Refine() — On-Demand Francis Refinement
 
-**Large:**
-```
-cmd/
-  server/     # Entry point
-internal/
-  handlers/   # HTTP handlers
-  service/    # Business logic
-  repository/ # Data access
-pkg/
-  models/     # Shared types
-configs/
-tests/
-  integration/
-```
+`Generator.Refine(clusterID int64) (*RefinedContent, error)` is called by `POST /api/briefs/{id}/refine`. Unlike `GenerateFromCluster`, it returns an explicit `ErrFrancisUnavailable` error rather than silently falling back — allowing the HTTP handler to return HTTP 503 so the UI can show "Francis is offline".
 
-Each template also includes an "Entry Point" and "Key Files" section.
-
-### Suggested Approach
-
-Currently hardcoded for all briefs:
-```
-1. Define API contract
-2. Implement core logic
-3. Add tests
-4. Document and deploy
-```
-
-### LinkedIn Angle
-
-```go
-fmt.Sprintf("Demonstrates %s skills from %d job postings", c.GapType, c.Frequency)
-// e.g. "Demonstrates skill_extension skills from 7 job postings"
-```
-
-### ImpactScore
-
-Set to `c.GapScore`, which is `nil` in the current clustering implementation (the field is reserved for future use).
+`BriefStore.UpdateFromFrancis` updates only the LLM-generated fields (`title`, `problem_statement`, `suggested_approach`, `linkedin_angle`, optionally `complexity` and `impact_score`) without setting `is_edited`, since this is a system action not a user edit.
 
 ---
 

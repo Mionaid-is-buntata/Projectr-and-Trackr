@@ -24,12 +24,12 @@ func (s *BriefStore) Insert(b *models.Brief) (int64, error) {
 			cluster_id, source_company, source_role,
 			title, problem_statement, suggested_approach,
 			technology_stack, project_layout, complexity, impact_score,
-			linkedin_angle, is_edited, date_generated, date_modified
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			linkedin_angle, is_edited, generation_source, date_generated, date_modified
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		b.ClusterID, b.SourceCompany, b.SourceRole,
 		b.Title, b.ProblemStatement, b.SuggestedApproach,
 		b.TechnologyStack, b.ProjectLayout, b.Complexity, b.ImpactScore,
-		b.LinkedInAngle, boolToInt(b.IsEdited), b.DateGenerated, timeToNullPtr(b.DateModified),
+		b.LinkedInAngle, boolToInt(b.IsEdited), b.GenerationSource, b.DateGenerated, timeToNullPtr(b.DateModified),
 	)
 	if err != nil {
 		return 0, err
@@ -43,7 +43,7 @@ func (s *BriefStore) List() ([]*models.Brief, error) {
 		SELECT id, cluster_id, source_company, source_role,
 			title, problem_statement, suggested_approach,
 			technology_stack, project_layout, complexity, impact_score,
-			linkedin_angle, is_edited, date_generated, date_modified
+			linkedin_angle, is_edited, generation_source, date_generated, date_modified
 		FROM briefs ORDER BY date_generated DESC`)
 	if err != nil {
 		return nil, err
@@ -58,7 +58,7 @@ func (s *BriefStore) List() ([]*models.Brief, error) {
 			&b.ID, &b.ClusterID, &b.SourceCompany, &b.SourceRole,
 			&b.Title, &b.ProblemStatement, &b.SuggestedApproach,
 			&b.TechnologyStack, &b.ProjectLayout, &b.Complexity, &b.ImpactScore,
-			&b.LinkedInAngle, &edited, &b.DateGenerated, &dateMod,
+			&b.LinkedInAngle, &edited, &b.GenerationSource, &b.DateGenerated, &dateMod,
 		); err != nil {
 			return nil, err
 		}
@@ -101,13 +101,13 @@ func (s *BriefStore) GetByID(id int64) (*models.Brief, error) {
 		SELECT id, cluster_id, source_company, source_role,
 			title, problem_statement, suggested_approach,
 			technology_stack, project_layout, complexity, impact_score,
-			linkedin_angle, is_edited, date_generated, date_modified
+			linkedin_angle, is_edited, generation_source, date_generated, date_modified
 		FROM briefs WHERE id = ?`, id,
 	).Scan(
 		&b.ID, &b.ClusterID, &b.SourceCompany, &b.SourceRole,
 		&b.Title, &b.ProblemStatement, &b.SuggestedApproach,
 		&b.TechnologyStack, &b.ProjectLayout, &b.Complexity, &b.ImpactScore,
-		&b.LinkedInAngle, &edited, &b.DateGenerated, &dateMod,
+		&b.LinkedInAngle, &edited, &b.GenerationSource, &b.DateGenerated, &dateMod,
 	)
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -120,6 +120,57 @@ func (s *BriefStore) GetByID(id int64) (*models.Brief, error) {
 		b.DateModified = &dateMod.Time
 	}
 	return &b, nil
+}
+
+// UpdateFromFrancis overwrites the LLM-generated fields of a brief and records
+// the generation source. is_edited is not set — this is a system update, not a
+// user edit. complexity and impactScore are only updated when non-empty / non-nil.
+func (s *BriefStore) UpdateFromFrancis(id int64, title, problemStatement, suggestedApproach, linkedInAngle, complexity, source string, impactScore *float64) error {
+	now := time.Now()
+	if complexity != "" && impactScore != nil {
+		_, err := s.db.Exec(`
+			UPDATE briefs SET
+				title = ?, problem_statement = ?, suggested_approach = ?,
+				linkedin_angle = ?, complexity = ?, impact_score = ?,
+				generation_source = ?, date_modified = ?
+			WHERE id = ?`,
+			title, problemStatement, suggestedApproach, linkedInAngle, complexity, *impactScore,
+			source, now, id,
+		)
+		return err
+	}
+	if complexity != "" {
+		_, err := s.db.Exec(`
+			UPDATE briefs SET
+				title = ?, problem_statement = ?, suggested_approach = ?,
+				linkedin_angle = ?, complexity = ?,
+				generation_source = ?, date_modified = ?
+			WHERE id = ?`,
+			title, problemStatement, suggestedApproach, linkedInAngle, complexity,
+			source, now, id,
+		)
+		return err
+	}
+	if impactScore != nil {
+		_, err := s.db.Exec(`
+			UPDATE briefs SET
+				title = ?, problem_statement = ?, suggested_approach = ?,
+				linkedin_angle = ?, impact_score = ?,
+				generation_source = ?, date_modified = ?
+			WHERE id = ?`,
+			title, problemStatement, suggestedApproach, linkedInAngle, *impactScore,
+			source, now, id,
+		)
+		return err
+	}
+	_, err := s.db.Exec(`
+		UPDATE briefs SET
+			title = ?, problem_statement = ?, suggested_approach = ?,
+			linkedin_angle = ?, generation_source = ?, date_modified = ?
+		WHERE id = ?`,
+		title, problemStatement, suggestedApproach, linkedInAngle, source, now, id,
+	)
+	return err
 }
 
 func boolToInt(b bool) int {

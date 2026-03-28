@@ -57,14 +57,26 @@ func (l *LLMExtractor) Extract(rawText string) ([]models.PainPoint, error) {
 		text = text[:3000]
 	}
 
-	prompt := fmt.Sprintf(`You are a technical recruiter analyst. Extract pain points from the job description below.
+	prompt := fmt.Sprintf(`You are a senior systems architect reviewing a job description to identify latent engineering challenges.
+
+Work through three steps internally before writing output:
+
+Step 1 — Extract signals: identify the tech stack, core responsibilities, implicit constraints, and anything the role needs to handle but does not explicitly name.
+Step 2 — Infer problems: for each responsibility, ask "what engineering problem does this actually require solving?" Focus on system design, scalability, reliability, and integration challenges — not skills lists.
+Step 3 — Reframe as project ideas: turn each inferred problem into a concrete, buildable project a developer could complete to demonstrate mastery.
+
+Output rules:
+- challenge_text must describe a specific engineering problem to solve, written as "Build a..." or "Create a..." — NEVER repeat the job requirement verbatim
+- Penalise resume language: "experience with X" or "familiarity with Y" are NOT valid challenge_text values
+- Prefer latent problems over obvious ones ("Handling distributed API consistency under unreliable networks" beats "Build a REST API")
+- Ignore soft skills, degree requirements, and generic requirements
 
 Return ONLY a JSON array. Each element must have:
-- "challenge_text": the specific technical challenge (one sentence)
+- "challenge_text": the concrete project idea (one sentence)
 - "domain": one of: language, framework, platform, tool, database, methodology, general
-- "outcome_text": the business outcome this skill enables (may be empty string)
-- "technologies": array of technology names mentioned
-- "confidence": float 0.0-1.0 based on how explicitly this is a requirement
+- "outcome_text": what this project proves to a hiring manager (one sentence)
+- "technologies": array of technology names the project would use
+- "confidence": float 0.0-1.0 — how strongly the JD signals this as a real unsolved problem vs a checkbox requirement
 
 Job description:
 """

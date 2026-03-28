@@ -94,6 +94,9 @@ type Brief struct {
 	ImpactScore       *float64   `json:"impact_score"`
 	LinkedInAngle     string     `json:"linkedin_angle"`
 	IsEdited          bool       `json:"is_edited"`
+	// GenerationSource records which path produced this brief's content.
+	// "rules" = rule-based only, "local_llm" = local Ollama, "francis" = Francis (mixtral)
+	GenerationSource  string     `json:"generation_source"`
 	DateGenerated     time.Time  `json:"date_generated"`
 	DateModified      *time.Time `json:"date_modified"`
 }
