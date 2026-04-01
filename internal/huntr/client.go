@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/yourname/projctr/internal/models"
+	"github.com/campbell/projctr/internal/models"
 )
 
 // JobReader reads job descriptions from Huntr's JSON files in jobs/scored/.

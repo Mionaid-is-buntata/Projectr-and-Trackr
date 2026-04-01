@@ -3,10 +3,10 @@ package trackr_test
 import (
 	"testing"
 
-	"github.com/yourname/projctr/internal/models"
-	"github.com/yourname/projctr/internal/repository"
-	"github.com/yourname/projctr/internal/testutil"
-	"github.com/yourname/projctr/internal/trackr"
+	"github.com/campbell/projctr/internal/models"
+	"github.com/campbell/projctr/internal/repository"
+	"github.com/campbell/projctr/internal/testutil"
+	"github.com/campbell/projctr/internal/trackr"
 )
 
 func setupService(t *testing.T) *trackr.Service {

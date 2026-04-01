@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/qdrant/go-client/qdrant"
-	"github.com/yourname/projctr/internal/config"
+	"github.com/campbell/projctr/internal/config"
 	"google.golang.org/grpc"
 )
 

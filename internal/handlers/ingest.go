@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/yourname/projctr/internal/ingestion"
-	"github.com/yourname/projctr/internal/pipeline"
-	"github.com/yourname/projctr/internal/repository"
+	"github.com/campbell/projctr/internal/ingestion"
+	"github.com/campbell/projctr/internal/pipeline"
+	"github.com/campbell/projctr/internal/repository"
 )
 
 // LastIngestResult holds the most recent ingest run stats for dashboard display.

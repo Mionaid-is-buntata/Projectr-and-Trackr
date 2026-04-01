@@ -185,7 +185,6 @@ Only two env vars are implemented in `config.Load`:
 |---|---|
 | `CONFIG_PATH` | Path to config file (handled in `main`, not `config.Load`) |
 | `HUNTR_JOBS_PATH` | `cfg.Huntr.JobsPath` |
-| `CHROMADB_URL` | `cfg.ChromaDB.URL` |
 
 `DATABASE_PATH` is mentioned in CLAUDE.md as an intended override but is not currently implemented in `config.Load`.
 

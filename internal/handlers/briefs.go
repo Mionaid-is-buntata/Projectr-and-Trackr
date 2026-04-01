@@ -10,10 +10,10 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/yourname/projctr/internal/briefs"
-	"github.com/yourname/projctr/internal/models"
-	"github.com/yourname/projctr/internal/repository"
-	"github.com/yourname/projctr/internal/trackr"
+	"github.com/campbell/projctr/internal/briefs"
+	"github.com/campbell/projctr/internal/models"
+	"github.com/campbell/projctr/internal/repository"
+	"github.com/campbell/projctr/internal/trackr"
 )
 
 // BriefsDeps holds dependencies for brief handlers.

@@ -6,7 +6,7 @@ import (
 
 	_ "modernc.org/sqlite"
 
-	"github.com/yourname/projctr/internal/database"
+	"github.com/campbell/projctr/internal/database"
 )
 
 func TestMigrate_Idempotent(t *testing.T) {

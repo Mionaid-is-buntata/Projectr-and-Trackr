@@ -8,12 +8,11 @@
 
 ## Purpose
 
-Projctr reads from two Huntr data stores:
+Projctr reads from one Huntr data store:
 
 1. **Job descriptions**: JSON files in `jobs/scored/` on the NAS
-2. **CV embeddings**: ChromaDB (embedded in Huntr Docker containers)
 
-Neither schema is documented from Projctr's perspective — they are owned by Huntr and subject to change. This runbook verifies paths, schemas, and embedding model details on the live Huntr instance on the Raspberry Pi.
+The schema is not documented from Projctr's perspective — it is owned by Huntr and subject to change. This runbook verifies paths and schemas on the live Huntr instance on the Raspberry Pi.
 
 ---
 
@@ -96,55 +95,7 @@ Record: **Total `____` / Sub-300 `____`**
 
 ---
 
-## 2. Huntr ChromaDB — Discovery
-
-ChromaDB stores CV embeddings. On the Raspberry Pi, Huntr runs in Docker; ChromaDB lives in a Docker volume.
-
-### 2.1 Locate ChromaDB
-
-```bash
-# Huntr Docker volume (Raspberry Pi)
-docker inspect huntr-web 2>/dev/null | grep -A5 Mounts
-ls -la /var/lib/docker/volumes/app_chromadb-data/_data/
-```
-
-Record:
-
-- ChromaDB path: **`/var/lib/docker/volumes/app_chromadb-data/_data`**
-- ChromaDB file: **`chroma.sqlite3`**
-- Size: **`________________`**
-
-Note: Projctr needs read access. If running as a non-root user, add the user to the `docker` group or use a bind mount.
-
-### 2.2 Huntr Config — Collection and Embedding Model
-
-```bash
-cat /mnt/nas/huntr-data/config/config.json | python3 -c "
-import json,sys
-c=json.load(sys.stdin)
-print('CV collection:', c.get('cv',{}).get('vector_db',{}).get('active_collection'))
-print('Embedding model:', c.get('embeddings',{}).get('model'))
-print('Vector DB path (in container):', c.get('cv',{}).get('chunked_processing',{}).get('vector_db_path'))
-"
-```
-
-Record:
-
-- Active collection: **`cv_20260126_223955`**
-- Embedding model: **`sentence-transformers/all-MiniLM-L6-v2`**
-- Vector dimensions: **`384`** (all-MiniLM-L6-v2)
-
-### 2.3 Verify Projctr Can Use the Same Model
-
-Gap analysis requires Projctr's pain point vectors to be in the same semantic space as Huntr's CV vectors. Confirm:
-
-- Projctr must use **sentence-transformers/all-MiniLM-L6-v2** (or equivalent)
-- Dimensions: **384**
-- Embedding endpoint: Huntr may use local Python (sentence-transformers); Projctr needs an HTTP endpoint (Ollama, etc.) or must run the same model locally
-
----
-
-## 3. Results Summary
+## 2. Results Summary
 
 ### Jobs (JSON)
 
@@ -157,21 +108,11 @@ Gap analysis requires Projctr's pain point vectors to be in the same semantic sp
 | Title field | `title` |
 | Source field | `source` |
 
-### ChromaDB
-
-| Item | Value |
-|------|-------|
-| ChromaDB path | `/var/lib/docker/volumes/app_chromadb-data/_data` |
-| Collection name | `cv_20260126_223955` |
-| Vector dimensions | 384 |
-| Embedding model | `sentence-transformers/all-MiniLM-L6-v2` |
-
 ---
 
-## 4. Next Steps After Discovery
+## 3. Next Steps After Discovery
 
-1. Update `config.toml` with `huntr.jobs_path` and `chromadb.url`
+1. Update `config.toml` with `huntr.jobs_path`
 2. Update `docs/07-embedding-model-decision.md` with model and dimensions
 3. Implement `internal/huntr/client.go` (JSON reader)
-4. Add Chroma HTTP sidecar — see **`docs/09-chroma-http-sidecar.md`**
-5. Create `projctr_pain_points` Qdrant collection with 384 dimensions
+4. Create `projctr_pain_points` Qdrant collection with 384 dimensions

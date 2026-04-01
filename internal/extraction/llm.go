@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yourname/projctr/internal/models"
+	"github.com/campbell/projctr/internal/models"
 )
 
 // LLMExtractor implements pain point extraction using an LLM via Ollama.

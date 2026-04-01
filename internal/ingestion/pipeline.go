@@ -5,11 +5,11 @@ import (
 	"log"
 	"time"
 
-	"github.com/yourname/projctr/internal/clustering"
-	"github.com/yourname/projctr/internal/huntr"
-	"github.com/yourname/projctr/internal/models"
-	"github.com/yourname/projctr/internal/repository"
-	"github.com/yourname/projctr/internal/vectordb"
+	"github.com/campbell/projctr/internal/clustering"
+	"github.com/campbell/projctr/internal/huntr"
+	"github.com/campbell/projctr/internal/models"
+	"github.com/campbell/projctr/internal/repository"
+	"github.com/campbell/projctr/internal/vectordb"
 )
 
 // Result holds ingestion pipeline stats.

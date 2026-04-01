@@ -1,4 +1,4 @@
-module github.com/yourname/projctr
+module github.com/campbell/projctr
 
 go 1.24.0
 

@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yourname/projctr/internal/models"
-	"github.com/yourname/projctr/internal/repository"
+	"github.com/campbell/projctr/internal/models"
+	"github.com/campbell/projctr/internal/repository"
 )
 
 // Service orchestrates semantic clustering of pain point embeddings.

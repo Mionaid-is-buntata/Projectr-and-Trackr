@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/yourname/projctr/internal/models"
+	"github.com/campbell/projctr/internal/models"
 )
 
 // PainPointStore persists and queries pain points and their technology links.

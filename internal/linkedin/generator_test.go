@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yourname/projctr/internal/models"
-	"github.com/yourname/projctr/internal/testutil"
+	"github.com/campbell/projctr/internal/models"
+	"github.com/campbell/projctr/internal/testutil"
 )
 
 func TestGenerate_IncludesBriefFields(t *testing.T) {

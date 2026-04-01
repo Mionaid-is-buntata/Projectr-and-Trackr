@@ -3,8 +3,8 @@ package repository_test
 import (
 	"testing"
 
-	"github.com/yourname/projctr/internal/repository"
-	"github.com/yourname/projctr/internal/testutil"
+	"github.com/campbell/projctr/internal/repository"
+	"github.com/campbell/projctr/internal/testutil"
 )
 
 func TestSettingsStore_GetFloat_Default(t *testing.T) {

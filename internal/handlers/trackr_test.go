@@ -9,11 +9,11 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/yourname/projctr/internal/handlers"
-	"github.com/yourname/projctr/internal/linkedin"
-	"github.com/yourname/projctr/internal/repository"
-	"github.com/yourname/projctr/internal/testutil"
-	"github.com/yourname/projctr/internal/trackr"
+	"github.com/campbell/projctr/internal/handlers"
+	"github.com/campbell/projctr/internal/linkedin"
+	"github.com/campbell/projctr/internal/repository"
+	"github.com/campbell/projctr/internal/testutil"
+	"github.com/campbell/projctr/internal/trackr"
 )
 
 func setupTrackrRouter(t *testing.T, gen *linkedin.Generator) (chi.Router, *trackr.Service, *repository.BriefStore, *repository.ProjectStore) {

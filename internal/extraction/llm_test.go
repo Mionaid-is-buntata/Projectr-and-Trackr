@@ -3,7 +3,7 @@ package extraction
 import (
 	"testing"
 
-	"github.com/yourname/projctr/internal/testutil"
+	"github.com/campbell/projctr/internal/testutil"
 )
 
 func TestLLMExtractor_Extract_ValidResponse(t *testing.T) {

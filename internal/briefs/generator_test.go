@@ -9,10 +9,10 @@ import (
 
 	_ "modernc.org/sqlite"
 
-	"github.com/yourname/projctr/internal/briefs"
-	"github.com/yourname/projctr/internal/database"
-	"github.com/yourname/projctr/internal/models"
-	"github.com/yourname/projctr/internal/repository"
+	"github.com/campbell/projctr/internal/briefs"
+	"github.com/campbell/projctr/internal/database"
+	"github.com/campbell/projctr/internal/models"
+	"github.com/campbell/projctr/internal/repository"
 )
 
 func setupTestDB(t *testing.T) *sql.DB {

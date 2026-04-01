@@ -57,7 +57,7 @@ Key sections: `[server]`, `[database]`, `[huntr]`, `[qdrant]`, `[embedding]`, `[
 
 `[trackr.llm]` falls back to `[extraction.llm]` when blank.
 
-**Env overrides:** `CONFIG_PATH`, `HUNTR_JOBS_PATH`, `CHROMADB_URL`, `DATABASE_PATH`, `QDRANT_HOST`, `QDRANT_PORT`, `EMBEDDING_ENDPOINT`, `LLM_ENDPOINT`
+**Env overrides:** `CONFIG_PATH`, `HUNTR_JOBS_PATH`, `DATABASE_PATH`, `QDRANT_HOST`, `QDRANT_PORT`, `EMBEDDING_ENDPOINT`, `LLM_ENDPOINT`
 
 ---
 

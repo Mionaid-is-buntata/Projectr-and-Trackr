@@ -6,11 +6,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yourname/projctr/internal/briefs"
-	"github.com/yourname/projctr/internal/clustering"
-	"github.com/yourname/projctr/internal/extraction"
-	"github.com/yourname/projctr/internal/models"
-	"github.com/yourname/projctr/internal/repository"
+	"github.com/campbell/projctr/internal/briefs"
+	"github.com/campbell/projctr/internal/clustering"
+	"github.com/campbell/projctr/internal/extraction"
+	"github.com/campbell/projctr/internal/models"
+	"github.com/campbell/projctr/internal/repository"
 )
 
 // Status tracks the current phase and outcome of the post-ingest pipeline.

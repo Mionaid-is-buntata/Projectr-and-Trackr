@@ -8,10 +8,10 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/yourname/projctr/internal/handlers"
-	"github.com/yourname/projctr/internal/huntr"
-	"github.com/yourname/projctr/internal/repository"
-	"github.com/yourname/projctr/internal/testutil"
+	"github.com/campbell/projctr/internal/handlers"
+	"github.com/campbell/projctr/internal/huntr"
+	"github.com/campbell/projctr/internal/repository"
+	"github.com/campbell/projctr/internal/testutil"
 )
 
 func setupSettingsRouter(t *testing.T) (chi.Router, *huntr.JobReader) {

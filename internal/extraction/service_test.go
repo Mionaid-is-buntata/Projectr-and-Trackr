@@ -3,8 +3,8 @@ package extraction
 import (
 	"testing"
 
-	"github.com/yourname/projctr/internal/models"
-	"github.com/yourname/projctr/internal/testutil"
+	"github.com/campbell/projctr/internal/models"
+	"github.com/campbell/projctr/internal/testutil"
 )
 
 func newTestRulesExtractor(t *testing.T) *RulesExtractor {

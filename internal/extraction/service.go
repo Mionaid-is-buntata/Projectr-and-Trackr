@@ -3,7 +3,7 @@ package extraction
 import (
 	"strings"
 
-	"github.com/yourname/projctr/internal/models"
+	"github.com/campbell/projctr/internal/models"
 )
 
 // Service orchestrates extraction using rules, LLM, or both.

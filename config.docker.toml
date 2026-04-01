@@ -13,9 +13,6 @@ jobs_path  = "/data/jobs/scored"
 score_min  = 0
 score_max  = 300
 
-[chromadb]
-url        = "http://localhost:8000"
-collection = "your-cv-collection-name"
 
 [qdrant]
 # Service name from docker-compose.yml (not localhost)

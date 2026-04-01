@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/yourname/projctr/internal/models"
+	"github.com/campbell/projctr/internal/models"
 )
 
 // DescriptionStore persists and queries job descriptions.

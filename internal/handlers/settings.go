@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/yourname/projctr/internal/huntr"
-	"github.com/yourname/projctr/internal/repository"
+	"github.com/campbell/projctr/internal/huntr"
+	"github.com/campbell/projctr/internal/repository"
 )
 
 // SettingsHandler returns the current score band (GET /api/settings).

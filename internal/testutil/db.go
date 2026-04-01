@@ -7,8 +7,8 @@ import (
 
 	_ "modernc.org/sqlite"
 
-	"github.com/yourname/projctr/internal/database"
-	"github.com/yourname/projctr/internal/models"
+	"github.com/campbell/projctr/internal/database"
+	"github.com/campbell/projctr/internal/models"
 )
 
 // NewTestDB creates an in-memory SQLite database with all migrations applied.

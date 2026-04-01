@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yourname/projctr/internal/models"
+	"github.com/campbell/projctr/internal/models"
 )
 
 // ErrLLMUnavailable is returned when the Ollama endpoint is unreachable.

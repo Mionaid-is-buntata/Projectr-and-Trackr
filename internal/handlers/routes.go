@@ -8,10 +8,10 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/yourname/projctr/internal/huntr"
-	"github.com/yourname/projctr/internal/ingestion"
-	"github.com/yourname/projctr/internal/pipeline"
-	"github.com/yourname/projctr/internal/repository"
+	"github.com/campbell/projctr/internal/huntr"
+	"github.com/campbell/projctr/internal/ingestion"
+	"github.com/campbell/projctr/internal/pipeline"
+	"github.com/campbell/projctr/internal/repository"
 )
 
 // Dependencies holds services required by handlers.

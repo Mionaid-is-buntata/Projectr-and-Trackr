@@ -1,5 +1,6 @@
 services:
   projctr:
+    container_name: projctr
     build: .
     ports:
       # Bind explicitly — if host mapping is empty after `up`, run `docker compose down && up -d`
@@ -24,6 +25,7 @@ services:
   # Native arm64 Qdrant images can crash with "<jemalloc>: Unsupported system page size"
   # on hosts with non-4K pages (e.g. 16K ARM). linux/amd64 runs under emulation but is stable.
   qdrant:
+    container_name: qdrant
     image: qdrant/qdrant:v1.12.4
     platform: linux/amd64
     ports:

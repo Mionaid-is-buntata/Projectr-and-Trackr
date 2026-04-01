@@ -3,7 +3,7 @@ package repository
 import (
 	"database/sql"
 
-	"github.com/yourname/projctr/internal/models"
+	"github.com/campbell/projctr/internal/models"
 )
 
 // ClusterStore persists and queries clusters.

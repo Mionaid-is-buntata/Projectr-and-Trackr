@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yourname/projctr/internal/models"
-	"github.com/yourname/projctr/internal/repository"
-	"github.com/yourname/projctr/internal/testutil"
+	"github.com/campbell/projctr/internal/models"
+	"github.com/campbell/projctr/internal/repository"
+	"github.com/campbell/projctr/internal/testutil"
 )
 
 func TestProjectStore_InsertAndGetByID(t *testing.T) {

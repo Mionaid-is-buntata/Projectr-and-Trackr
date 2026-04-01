@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yourname/projctr/internal/models"
-	"github.com/yourname/projctr/internal/repository"
+	"github.com/campbell/projctr/internal/models"
+	"github.com/campbell/projctr/internal/repository"
 )
 
 // ErrFrancisUnavailable is returned by Refine when the Francis LLM is not

@@ -15,7 +15,6 @@ type Config struct {
 	Server     ServerConfig
 	Database   DatabaseConfig
 	Huntr      HuntrConfig
-	ChromaDB   ChromaDBConfig
 	Qdrant     QdrantConfig
 	Embedding  EmbeddingConfig
 	Extraction ExtractionConfig
@@ -47,12 +46,6 @@ type HuntrConfig struct {
 	JobsPath string  `toml:"jobs_path"` // Path to jobs/scored/ JSON files
 	ScoreMin float64 `toml:"score_min"` // Lower bound (inclusive). Jobs below this are too weak a match.
 	ScoreMax float64 `toml:"score_max"` // Upper bound (exclusive). Jobs at or above this are already a strong match.
-}
-
-type ChromaDBConfig struct {
-	URL        string `toml:"url"`        // HTTP URL (e.g. http://localhost:8000) — preferred
-	Path       string `toml:"path"`       // Path for PersistentClient (alternative)
-	Collection string `toml:"collection"` // CV collection name from Huntr
 }
 
 type QdrantConfig struct {
@@ -91,7 +84,7 @@ type IngestionConfig struct {
 }
 
 // loadDotEnv reads a .env file and sets any env vars not already set in the environment.
-// Shell environment always takes precedence. Silently skips if the file doesn't exist.
+// Shell environment always takes precedence. Silently skips if the file does not exist.
 func loadDotEnv(path string) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -143,12 +136,6 @@ func Load(path string) (*Config, error) {
 	}
 	if v := os.Getenv("HUNTR_JOBS_PATH"); v != "" {
 		cfg.Huntr.JobsPath = v
-	}
-	if v := os.Getenv("CHROMADB_URL"); v != "" {
-		cfg.ChromaDB.URL = v
-	}
-	if v := os.Getenv("CHROMADB_COLLECTION"); v != "" {
-		cfg.ChromaDB.Collection = v
 	}
 	if v := os.Getenv("EMBEDDING_ENDPOINT"); v != "" {
 		cfg.Embedding.Endpoint = v

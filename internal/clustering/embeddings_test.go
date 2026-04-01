@@ -3,7 +3,7 @@ package clustering
 import (
 	"testing"
 
-	"github.com/yourname/projctr/internal/testutil"
+	"github.com/campbell/projctr/internal/testutil"
 )
 
 func TestEmbedder_Ready(t *testing.T) {

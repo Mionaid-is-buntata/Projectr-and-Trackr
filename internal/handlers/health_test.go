@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/yourname/projctr/internal/handlers"
+	"github.com/campbell/projctr/internal/handlers"
 )
 
 func TestHealthEndpoint(t *testing.T) {
