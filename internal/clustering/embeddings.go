@@ -34,12 +34,12 @@ func (e *Embedder) Ready() bool {
 }
 
 type ollamaEmbedReq struct {
-	Model  string `json:"model"`
-	Prompt string `json:"prompt"`
+	Model string `json:"model"`
+	Input string `json:"input"`
 }
 
 type ollamaEmbedResp struct {
-	Embedding []float64 `json:"embedding"`
+	Embeddings [][]float64 `json:"embeddings"`
 }
 
 // Embed generates a vector embedding for the given text.
@@ -48,7 +48,7 @@ func (e *Embedder) Embed(text string) ([]float32, error) {
 	if !e.Ready() {
 		return nil, fmt.Errorf("embedding endpoint not configured")
 	}
-	body, _ := json.Marshal(ollamaEmbedReq{Model: e.model, Prompt: text})
+	body, _ := json.Marshal(ollamaEmbedReq{Model: e.model, Input: text})
 	req, err := http.NewRequestWithContext(context.Background(), "POST", e.endpoint, bytes.NewReader(body))
 	if err != nil {
 		return nil, err
@@ -66,8 +66,11 @@ func (e *Embedder) Embed(text string) ([]float32, error) {
 	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
 		return nil, err
 	}
-	vec := make([]float32, len(out.Embedding))
-	for i, v := range out.Embedding {
+	if len(out.Embeddings) == 0 {
+		return nil, fmt.Errorf("embedding API: empty response")
+	}
+	vec := make([]float32, len(out.Embeddings[0]))
+	for i, v := range out.Embeddings[0] {
 		vec[i] = float32(v)
 	}
 	return vec, nil

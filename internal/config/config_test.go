@@ -28,7 +28,7 @@ vector_dimensions = 384
 
 [embedding]
 model = "test-model"
-endpoint = "http://localhost:11434/api/embeddings"
+endpoint = "http://localhost:11434/api/embed"
 
 [extraction]
 mode = "rules"

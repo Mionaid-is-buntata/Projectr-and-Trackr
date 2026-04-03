@@ -24,7 +24,7 @@ vector_dimensions      = 384
 
 [embedding]
 model    = "all-minilm:l6-v2"
-endpoint = "http://localhost:11434/api/embeddings"   # override with EMBEDDING_ENDPOINT=...
+endpoint = "http://localhost:11434/api/embed"   # override with EMBEDDING_ENDPOINT=...
 
 [extraction]
 mode            = "rules"   # "rules", "llm", or "both"
