@@ -409,7 +409,7 @@ pre{white-space:pre-wrap;font-size:0.9rem;overflow-x:auto}
 		`<a class="export" href="/api/briefs/` + briefIDStr + `/export">Download as Markdown</a>`
 
 	if canRefine && b.GenerationSource != "francis" {
-		page += `<button class="refine-btn" onclick="refineWithFrancis()">Refine with Francis (mixtral)</button>` +
+		page += `<button class="refine-btn" onclick="refineWithFrancis()">Refine with Francis (model)</button>` +
 			`<span class="refine-feedback" id="refine-fb"></span>`
 	}
 	page += `</div>

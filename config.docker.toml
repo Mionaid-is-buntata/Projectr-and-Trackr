@@ -32,8 +32,9 @@ tech_dictionary = "./config/tech-dict.toml"
 
 [extraction.llm]
 enabled  = false
-endpoint = "http://host.docker.internal:11434"
-model    = "qwen3:1.7b"
+endpoint = "http://francis.local:11434"
+model    = "gemma4:e4b"
+# model    = "dolphincoder:15b"
 
 [clustering]
 min_cluster_size     = 3
@@ -48,4 +49,4 @@ enabled = true
 
 [trackr.llm]
 endpoint = "http://host.docker.internal:11434"
-model    = "qwen3:1.7b"
+model    = "medllama2:latest"

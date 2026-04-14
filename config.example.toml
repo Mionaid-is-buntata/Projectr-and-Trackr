@@ -52,7 +52,7 @@ enabled = true
 # Leave blank to inherit from [extraction.llm].
 # To use a dedicated machine (e.g. Francis with RTX 5060Ti):
 #   endpoint = "http://francis.local:11434"
-#   model    = "mixtral:latest"
+#   model    = "dolphincoder:15b"
 # Or override via env: TRACKR_LLM_ENDPOINT, TRACKR_LLM_MODEL
 endpoint = ""
 model    = ""

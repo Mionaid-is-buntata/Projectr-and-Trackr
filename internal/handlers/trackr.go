@@ -545,7 +545,7 @@ func trackrDetailPage(deps *TrackrDeps) http.HandlerFunc {
 				if brief, err := deps.BriefStore.GetByID(p.BriefID); err == nil && brief != nil && brief.GenerationSource != "francis" {
 					briefNav += fmt.Sprintf(
 						`<div style="margin-bottom:0.75rem">`+
-							`<button style="background:#6f42c1;color:#fff;border:none;padding:0.35rem 0.85rem;border-radius:4px;cursor:pointer;font-size:0.85rem" onclick="refineWithFrancis(%d)">Refine with Francis (mixtral)</button>`+
+							`<button style="background:#6f42c1;color:#fff;border:none;padding:0.35rem 0.85rem;border-radius:4px;cursor:pointer;font-size:0.85rem" onclick="refineWithFrancis(%d)">Refine with Francis (model)</button>`+
 							`<span id="francis-fb" style="font-size:0.85rem;margin-left:0.5rem"></span>`+
 							`</div>`,
 						p.BriefID,
